@@ -4,7 +4,7 @@ info:
   version: 1.0.0
   contact: {}
 servers:
-  - url: '{{base_url}}'
+  - url: "{{base_url}}"
 paths:
   /auth/register:
     post:
@@ -33,10 +33,10 @@ paths:
                   example: Secure@123
                 phone:
                   type: string
-                  example: '03001234567'
+                  example: "03001234567"
                 pin:
                   type: string
-                  example: '4821'
+                  example: "4821"
             examples:
               POST Register:
                 value:
@@ -44,10 +44,10 @@ paths:
                   email: ali@gmail.com
                   full_name: Ali Hassan
                   password: Secure@123
-                  phone: '03001234567'
-                  pin: '4821'
+                  phone: "03001234567"
+                  pin: "4821"
       responses:
-        '201':
+        "201":
           description: 201 created
           content:
             application/json:
@@ -71,7 +71,7 @@ paths:
                         properties:
                           created_at:
                             type: string
-                            example: '2026-05-01T10:00:00Z'
+                            example: "2026-05-01T10:00:00Z"
                           email:
                             type: string
                             example: ali@gmail.com
@@ -86,7 +86,7 @@ paths:
                             example: false
                           phone:
                             type: string
-                            example: '03001234567'
+                            example: "03001234567"
                           role:
                             type: string
                             example: user
@@ -95,7 +95,7 @@ paths:
                         properties:
                           balance:
                             type: string
-                            example: '0.00'
+                            example: "0.00"
                           currency:
                             type: string
                             example: PKR
@@ -116,20 +116,20 @@ paths:
                       expires_in: 900
                       token_type: Bearer
                       user:
-                        created_at: '2026-05-01T10:00:00Z'
+                        created_at: "2026-05-01T10:00:00Z"
                         email: ali@gmail.com
                         full_name: Ali Hassan
                         id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
                         is_verified: false
-                        phone: '03001234567'
+                        phone: "03001234567"
                         role: user
                       wallet:
-                        balance: '0.00'
+                        balance: "0.00"
                         currency: PKR
                         id: b2c3d4e5-f6a7-8901-bcde-f12345678901
                     message: Account created. Please verify your phone.
                     success: true
-        '409':
+        "409":
           description: 409 Conflict
           content:
             application/json:
@@ -159,7 +159,7 @@ paths:
                       field: phone
                       message: An account with this phone number already exists.
                     success: false
-        '422':
+        "422":
           description: 422 Validation
           content:
             application/json:
@@ -177,7 +177,7 @@ paths:
                         properties:
                           cnic:
                             type: string
-                            example: 'Invalid CNIC format. Expected: XXXXX-XXXXXXX-X'
+                            example: "Invalid CNIC format. Expected: XXXXX-XXXXXXX-X"
                           password:
                             type: string
                             example: >-
@@ -195,11 +195,11 @@ paths:
                     error:
                       code: VALIDATION_ERROR
                       fields:
-                        cnic: 'Invalid CNIC format. Expected: XXXXX-XXXXXXX-X'
+                        cnic: "Invalid CNIC format. Expected: XXXXX-XXXXXXX-X"
                         password: Password must contain at least one special character.
                       message: Request validation failed.
                     success: false
-        '429':
+        "429":
           description: 429 Rate Limit
           content:
             application/json:
@@ -231,6 +231,199 @@ paths:
                       message: Too many registration attempts. Try again in 60 minutes.
                       retry_after: 3600
                     success: false
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: POST Login
+      description: POST Login
+      operationId: postLogin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                device_info:
+                  type: string
+                  example: Chrome 124 / Windows 11
+                email:
+                  type: string
+                  example: ali@gmail.com
+                password:
+                  type: string
+                  example: Secure@123
+            examples:
+              POST Login:
+                value:
+                  device_info: Chrome 124 / Windows 11
+                  email: ali@gmail.com
+                  password: Secure@123
+      responses:
+        "200":
+          description: 200 OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      access_token:
+                        type: string
+                        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                      expires_in:
+                        type: number
+                        example: 900
+                      token_type:
+                        type: string
+                        example: Bearer
+                      user:
+                        type: object
+                        properties:
+                          email:
+                            type: string
+                            example: ali@gmail.com
+                          full_name:
+                            type: string
+                            example: Ali Hassan
+                          id:
+                            type: string
+                            example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                          is_frozen:
+                            type: boolean
+                            example: false
+                          is_verified:
+                            type: boolean
+                            example: true
+                          phone:
+                            type: string
+                            example: "03001234567"
+                          role:
+                            type: string
+                            example: user
+                      wallet:
+                        type: object
+                        properties:
+                          balance:
+                            type: string
+                            example: "15000.00"
+                          currency:
+                            type: string
+                            example: PKR
+                          id:
+                            type: string
+                            example: b2c3d4e5-f6a7-8901-bcde-f12345678901
+                  success:
+                    type: boolean
+                    example: true
+              examples:
+                200 OK:
+                  value:
+                    data:
+                      access_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                      expires_in: 900
+                      token_type: Bearer
+                      user:
+                        email: ali@gmail.com
+                        full_name: Ali Hassan
+                        id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                        is_frozen: false
+                        is_verified: true
+                        phone: "03001234567"
+                        role: user
+                      wallet:
+                        balance: "15000.00"
+                        currency: PKR
+                        id: b2c3d4e5-f6a7-8901-bcde-f12345678901
+                    success: true
+        "401":
+          description: 401 Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: INVALID_CREDENTIALS
+                      message:
+                        type: string
+                        example: Email or password is incorrect.
+                  success:
+                    type: boolean
+                    example: false
+              examples:
+                401 Unauthorized:
+                  value:
+                    error:
+                      code: INVALID_CREDENTIALS
+                      message: Email or password is incorrect.
+                    success: false
+        "403":
+          description: 403 Frozen
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: ACCOUNT_FROZEN
+                      message:
+                        type: string
+                        example: Your account has been suspended. Contact support.
+                      support_email:
+                        type: string
+                        example: support@safepay.pk
+                  success:
+                    type: boolean
+                    example: false
+              examples:
+                403 Frozen:
+                  value:
+                    error:
+                      code: ACCOUNT_FROZEN
+                      message: Your account has been suspended. Contact support.
+                      support_email: support@safepay.pk
+                    success: false
+        "429":
+          description: 429 Rate Limit
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: RATE_LIMIT_EXCEEDED
+                      message:
+                        type: string
+                        example: Too many login attempts. Try again in 60 minutes.
+                      retry_after:
+                        type: number
+                        example: 3600
+                  success:
+                    type: boolean
+                    example: false
+              examples:
+                429 Rate Limit:
+                  value:
+                    error:
+                      code: RATE_LIMIT_EXCEEDED
+                      message: Too many login attempts. Try again in 60 minutes.
+                      retry_after: 3600
+                    success: false
 components:
   securitySchemes:
     bearerAuth:
@@ -245,4 +438,3 @@ tags:
   - name: Fraud
   - name: Admin
   - name: Notifications
-
