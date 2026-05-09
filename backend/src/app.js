@@ -7,6 +7,8 @@ import walletRouter from "./routes/wallet.routes.js";
 import healthRouter from "./routes/healthcheck.routes.js";
 import transactionRouter from "./routes/transactions.routes.js";
 import notificationRouter from "./routes/notifications.routes.js";
+import fraudRouter from "./routes/fraud.routes.js";
+import adminRouter from "./routes/admin.routes.js";
 
 
 
@@ -21,8 +23,8 @@ app.use(
   })
 );
 
-app.use(express.json({ limit: "16kb" }));
-app.use(express.urlencoded({ extended: true, limit: "16kb" })); 
+app.use(express.json());
+app.use(express.urlencoded({ extended: true })); 
 app.use(express.static("public"));                               
 app.use(cookieParser());  
 
@@ -46,6 +48,9 @@ app.use("/api/v1/transactions", transactionRouter);
 app.use("/api/v1/notifications", notificationRouter);
 
 
-// app.use("/api/v1/fraud", fraudRouter);
+app.use("/api/v1/fraud", fraudRouter);
+
+
+app.use("/api/v1/admin", adminRouter);
 
 export { app };
