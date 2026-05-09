@@ -133,11 +133,7 @@ dmypy.json
 .DS_Store
 Thumbs.db
 
-# Models and large files
-*.pkl
-*.pickle
-*.h5
-*.joblib
-*.model
-models/
-data/
+
+
+
+
