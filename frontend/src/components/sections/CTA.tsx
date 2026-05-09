@@ -5,7 +5,7 @@ export function CTA() {
   return (
     <section className="relative overflow-hidden bg-slate-950 py-24">
       <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-700 to-violet-700" />
+        <div className="absolute inset-0 bg-linear-to-br from-blue-600 via-indigo-700 to-violet-700" />
         <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(circle at 25% 20%, white 1px, transparent 1px), radial-gradient(circle at 75% 80%, white 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
         <div className="absolute -left-20 top-10 h-72 w-72 rounded-full bg-blue-400/40 blur-3xl" />
         <div className="absolute -right-20 bottom-10 h-72 w-72 rounded-full bg-violet-400/40 blur-3xl" />
