@@ -1,0 +1,441 @@
+import { AsyncHandler } from "../utils/AsyncHandler.js";
+import { ApiError } from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
+import { prisma } from "../db/index.js";
+import bcrypt from "bcryptjs";
+import { checkFraud } from "../services/fraud.service.js";
+
+
+const getBalance = AsyncHandler(async (req, res) => {
+  const wallet = await prisma.wallet.findUnique({
+    where: { user_id: req.user.id },
+    select: {
+      id: true,
+      balance: true,
+      currency: true,
+      updated_at: true,
+    },
+  });
+
+  if (!wallet) {
+    throw new ApiError(404, "Wallet not found.", { code: "NOT_FOUND" });
+  }
+
+  return res.status(200).json(
+    new ApiResponse(200, { wallet }, "Wallet fetched successfully.")
+  );
+});
+
+
+const topUp = AsyncHandler(async (req, res) => {
+  const { amount } = req.body;
+
+  if (!amount || isNaN(amount) || Number(amount) <= 0) {
+    throw new ApiError(422, "Invalid amount.", {
+      code: "VALIDATION_ERROR",
+      fields: { amount: "Must be a positive number." },
+    });
+  }
+
+  if (Number(amount) > 100000) {
+    throw new ApiError(422, "Max top-up is Rs. 100,000 at a time.", {
+      code: "VALIDATION_ERROR",
+      fields: { amount: "Exceeds maximum top-up limit." },
+    });
+  }
+
+  const topupAmount = parseFloat(amount);
+
+  const wallet = await prisma.$transaction(async (tx) => {
+    const current = await tx.wallet.findUnique({
+      where: { user_id: req.user.id },
+    });
+
+    if (!current) {
+      throw new ApiError(404, "Wallet not found.");
+    }
+
+    const transaction = await tx.transaction.create({
+      data: {
+        sender: {
+          connect: { id: req.user.id },
+        },
+        receiver: {
+          connect: { id: req.user.id },
+        },
+        amount: topupAmount,
+        status: "APPROVED",
+        is_fraud: false,
+        fraud_reasons: [],
+      },
+    });
+
+    const updated = await tx.wallet.update({
+      where: { user_id: req.user.id },
+      data: { balance: { increment: topupAmount } },
+    });
+
+    await tx.walletLog.create({
+      data: {
+        user: { connect: { id: req.user.id } },
+        transaction: { connect: { id: transaction.id } },
+        type: "TOPUP",
+        amount: topupAmount,
+        balance_before: current.balance,
+        balance_after: updated.balance,
+      },
+    });
+
+    return updated;
+  });
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        balance: wallet.balance,
+        currency: wallet.currency,
+        topped_up: topupAmount,
+      },
+      `Rs. ${topupAmount} added to your wallet.`
+    )
+  );
+}); 
+
+
+const sendMoney = AsyncHandler(async (req, res) => {
+  const { receiver_phone, amount, note, pin } = req.body;
+
+
+  if (!receiver_phone || !amount || !pin) {
+    throw new ApiError(422, "receiver_phone, amount and pin are required.", {
+      code: "VALIDATION_ERROR",
+      fields: {
+        ...(!receiver_phone && { receiver_phone: "Required." }),
+        ...(!amount && { amount: "Required." }),
+        ...(!pin && { pin: "Required." }),
+      },
+    });
+  }
+
+  if (isNaN(amount) || Number(amount) <= 0) {
+    throw new ApiError(422, "Invalid amount.", {
+      code: "VALIDATION_ERROR",
+      fields: { amount: "Must be a positive number." },
+    });
+  }
+
+  if (Number(amount) > 500000) {
+    throw new ApiError(422, "Exceeds transaction limit of Rs. 500,000.", {
+      code: "VALIDATION_ERROR",
+      fields: { amount: "Max single transaction is Rs. 500,000." },
+    });
+  }
+
+  const sendAmount = parseFloat(amount);
+
+  // 2. Find receiver
+  const receiver = await prisma.user.findUnique({
+    where: { phone: receiver_phone },
+    include: { wallet: true },
+  });
+
+  if (!receiver) {
+    throw new ApiError(404, "No account found with this phone number.", {
+      code: "USER_NOT_FOUND",
+    });
+  }
+
+  // 3. No self-transfer
+  if (receiver.id === req.user.id) {
+    throw new ApiError(400, "You cannot send money to yourself.", {
+      code: "SELF_TRANSFER",
+    });
+  }
+
+  // 4. Receiver not frozen
+  if (receiver.is_frozen) {
+    throw new ApiError(400, "Receiver account is unavailable.", {
+      code: "RECEIVER_FROZEN",
+    });
+  }
+
+  // 5. Get sender details
+  const sender = await prisma.user.findUnique({
+    where: { id: req.user.id },
+    include: { wallet: true },
+  });
+
+  // 6. Check balance
+  if (parseFloat(sender.wallet.balance) < sendAmount) {
+    throw new ApiError(400, "Insufficient balance.", {
+      code: "INSUFFICIENT_BALANCE",
+      data: {
+        available: sender.wallet.balance,
+        required: sendAmount,
+      },
+    });
+  }
+
+  // 7. Verify PIN
+  const isPinValid = await bcrypt.compare(pin, sender.pin_hash);
+  if (!isPinValid) {
+    throw new ApiError(401, "Incorrect PIN.", { code: "INVALID_PIN" });
+  }
+
+  // 8. ML Fraud Check
+  const [senderTxnCount, receiverTxnCount] = await Promise.all([
+    prisma.transaction.count({ where: { sender_id: req.user.id } }),
+    prisma.transaction.count({ where: { receiver_id: receiver.id } }),
+  ]);
+
+  const fraudResult = await checkFraud({
+    amount: sendAmount,
+    hour_of_day: new Date().getHours(),
+    sender_txn_count: senderTxnCount,
+    receiver_txn_count: receiverTxnCount,
+    device_ip: req.ip,
+  });
+
+  const { risk_score, is_fraud, reasons, fallback } = fraudResult;
+
+  // 9. BLOCKED
+  if (is_fraud) {
+    const blockedTxn = await prisma.$transaction(async (tx) => {
+      const txn = await tx.transaction.create({
+        data: {
+          sender_id: req.user.id,
+          receiver_id: receiver.id,
+          amount: sendAmount,
+          note,
+          status: "BLOCKED",
+          risk_score,
+          is_fraud: true,
+          fraud_reasons: reasons,
+          device_ip: req.ip,
+          hour_of_day: new Date().getHours(),
+          device_type: req.headers["user-agent"]
+            ?.includes("Mobile") ? "mobile" : "web",
+        },
+      });
+
+      await tx.fraudReport.create({
+        data: {
+          transaction_id: txn.id,
+          risk_score,
+          fraud_signals: reasons,
+          ml_model_version: process.env.ML_MODEL_VERSION || "v1.0.0",
+        },
+      });
+
+      await tx.notification.create({
+        data: {
+          user_id: req.user.id,
+          transaction_id: txn.id,
+          title: "Transaction Blocked 🚨",
+          message: `Your transfer of Rs. ${sendAmount} to ${receiver.full_name} was blocked due to suspicious activity.`,
+          type: "FRAUD_ALERT",
+        },
+      });
+
+      return txn;
+    });
+
+    return res.status(200).json(
+      new ApiResponse(200, {
+        status: "BLOCKED",
+        risk_score,
+        reasons,
+        transaction_id: blockedTxn.id,
+      }, "Transaction blocked due to suspicious activity.")
+    );
+  }
+
+  // 10. APPROVED — full ACID transfer
+  const txn = await prisma.$transaction(async (tx) => {
+    const updatedSender = await tx.wallet.update({
+      where: { user_id: req.user.id },
+      data: { balance: { decrement: sendAmount } },
+    });
+
+    const updatedReceiver = await tx.wallet.update({
+      where: { user_id: receiver.id },
+      data: { balance: { increment: sendAmount } },
+    });
+
+    const txn = await tx.transaction.create({
+      data: {
+        sender_id: req.user.id,
+        receiver_id: receiver.id,
+        amount: sendAmount,
+        note,
+        status: "APPROVED",
+        risk_score,
+        is_fraud: false,
+        fraud_reasons: reasons,
+        device_ip: req.ip,
+        hour_of_day: new Date().getHours(),
+        device_type: req.headers["user-agent"]
+          ?.includes("Mobile") ? "mobile" : "web",
+      },
+    });
+
+    // Sender wallet log (DEBIT)
+    await tx.walletLog.create({
+      data: {
+        user_id: req.user.id,
+        transaction_id: txn.id,
+        type: "DEBIT",
+        amount: sendAmount,
+        balance_before: sender.wallet.balance,
+        balance_after: updatedSender.balance,
+      },
+    });
+
+    // Receiver wallet log (CREDIT)
+    await tx.walletLog.create({
+      data: {
+        user_id: receiver.id,
+        transaction_id: txn.id,
+        type: "CREDIT",
+        amount: sendAmount,
+        balance_before: receiver.wallet.balance,
+        balance_after: updatedReceiver.balance,
+      },
+    });
+
+    // Notify sender
+    await tx.notification.create({
+      data: {
+        user_id: req.user.id,
+        transaction_id: txn.id,
+        title: "Money Sent ✅",
+        message: `Rs. ${sendAmount} sent to ${receiver.full_name} successfully.`,
+        type: "SUCCESS",
+      },
+    });
+
+    // Notify receiver
+    await tx.notification.create({
+      data: {
+        user_id: receiver.id,
+        transaction_id: txn.id,
+        title: "Money Received 💰",
+        message: `Rs. ${sendAmount} received from ${sender.full_name}.`,
+        type: "SUCCESS",
+      },
+    });
+
+    return txn;
+  });
+
+  return res.status(200).json(
+    new ApiResponse(200, {
+      status: "APPROVED",
+      risk_score,
+      fallback: fallback || false,
+      transaction_id: txn.id,
+      amount: sendAmount,
+      receiver: {
+        name: receiver.full_name,
+        phone: receiver_phone,
+      },
+    }, `Rs. ${sendAmount} sent to ${receiver.full_name} successfully.`)
+  );
+});
+
+
+const getHistory = AsyncHandler(async (req, res) => {
+  const { page = 1, limit = 20, status, type } = req.query;
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+
+  let where = {
+    OR: [
+      { sender_id: req.user.id },
+      { receiver_id: req.user.id },
+    ],
+  };
+
+  if (status) where.status = status;
+  if (type === "SENT") where = { sender_id: req.user.id, ...(status && { status }) };
+  if (type === "RECEIVED") where = { receiver_id: req.user.id, ...(status && { status }) };
+
+  const [transactions, total] = await Promise.all([
+    prisma.transaction.findMany({
+      where,
+      orderBy: { created_at: "desc" },
+      skip,
+      take: parseInt(limit),
+      select: {
+        id: true,
+        amount: true,
+        note: true,
+        status: true,
+        risk_score: true,
+        is_fraud: true,
+        hour_of_day: true,
+        created_at: true,
+        sender: {
+          select: { id: true, full_name: true, phone: true },
+        },
+        receiver: {
+          select: { id: true, full_name: true, phone: true },
+        },
+      },
+    }),
+    prisma.transaction.count({ where }),
+  ]);
+
+  return res.status(200).json(
+    new ApiResponse(200, {
+      transactions,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: Math.ceil(total / parseInt(limit)),
+      },
+    }, "Transaction history fetched.")
+  );
+});
+
+
+const getWalletLogs = AsyncHandler(async (req, res) => {
+  const { page = 1, limit = 20 } = req.query;
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+
+  const [logs, total] = await Promise.all([
+    prisma.walletLog.findMany({
+      where: { user_id: req.user.id },
+      orderBy: { created_at: "desc" },
+      skip,
+      take: parseInt(limit),
+      select: {
+        id: true,
+        type: true,
+        amount: true,
+        balance_before: true,
+        balance_after: true,
+        created_at: true,
+        transaction_id: true,
+      },
+    }),
+    prisma.walletLog.count({
+      where: { user_id: req.user.id },
+    }),
+  ]);
+
+  return res.status(200).json(
+    new ApiResponse(200, {
+      logs,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: Math.ceil(total / parseInt(limit)),
+      },
+    }, "Wallet logs fetched.")
+  );
+});
+
+export { getBalance, topUp, sendMoney, getHistory, getWalletLogs };

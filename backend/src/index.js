@@ -13,7 +13,7 @@ connectDb()
     });
  
     app.listen(process.env.PORT || 5000, () => {
-      console.log(`Server is running on PORT: ${process.env.PORT || 5000}`);
+      console.log(`Server is running on PORT: ${process.env.PORT || 8000}`);
     });
   })
   .catch((err) => {

@@ -3,6 +3,10 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import session from "express-session";
 import authRouter from "./routes/auth.routes.js"; 
+import walletRouter from "./routes/wallet.routes.js";
+import healthRouter from "./routes/healthcheck.routes.js";
+import transactionRouter from "./routes/transactions.routes.js";
+import notificationRouter from "./routes/notifications.routes.js";
 
 
 
@@ -26,39 +30,22 @@ app.get("/", (req, res) => {
   res.send("Welcome to the Financial Management API");
 });
 
-// Session setup (replaces JWT/cookie auth from MongoDB projects)
-// app.use(
-//   session({
-//     secret: process.env.SESSION_SECRET,
-//     resave: false,
-//     saveUninitialized: false,
-//     cookie: {
-//       secure: process.env.NODE_ENV === "production", // true in prod (HTTPS only)
-//       httpOnly: true,                                // JS cannot access cookie
-//       maxAge: 1000 * 60 * 60 * 24,                  // 1 day
-//     },
-//   })
-// );
 
-// healthcheck route
-// app.use("/api/v1/health", healthRouter);
+app.use("/api/v1/health", healthRouter);
 
-// // auth routes (register, login, logout)
-// app.use("/api/v1/auth", authRouter);
 
-// user routes
+
 app.use("/api/v1/auth", authRouter);
 
-// // wallet routes
-// app.use("/api/v1/wallet", walletRouter);
+app.use("/api/v1/wallet", walletRouter);
 
-// // transaction routes
-// app.use("/api/v1/transactions", transactionRouter);
 
-// // notification routes
-// app.use("/api/v1/notifications", notificationRouter);
+app.use("/api/v1/transactions", transactionRouter);
 
-// // fraud routes (admin only)
+
+app.use("/api/v1/notifications", notificationRouter);
+
+
 // app.use("/api/v1/fraud", fraudRouter);
 
 export { app };
