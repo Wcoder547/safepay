@@ -1,6 +1,5 @@
-import { ArrowRight, Check, ChevronRight, Fingerprint, Shield, Sparkles, Star, TrendingUp } from "lucide-react";
+import { ArrowRight, Check, ChevronRight, Fingerprint, Shield, Sparkles,TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
 export function Hero() {
   return (
     <section className="relative overflow-hidden">
@@ -34,27 +33,60 @@ export function Hero() {
           </h1>
           <p className="mt-6 max-w-xl text-lg leading-relaxed text-slate-600">SafePay uses real-time AI to detect fraud before every transaction. Instant transfers. Zero fees. Full peace of mind.</p>
           <div className="mt-9 flex flex-wrap items-center gap-3">
-            <Button size="lg" className="h-12 rounded-full bg-linear-to-r from-blue-600 to-indigo-600 px-7 text-base shadow-lg shadow-blue-600/30 hover:shadow-xl hover:shadow-blue-600/40 transition-all">
-              Create free account <ArrowRight className="h-4 w-4" />
-            </Button>
-            <Button size="lg" variant="ghost" className="h-12 rounded-full px-6 text-base text-slate-700 hover:bg-slate-100">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-900 text-white">▶</span>
+           <button className="group relative h-12 overflow-hidden rounded-full bg-linear-to-r from-blue-600 to-indigo-600 px-7 text-sm font-semibold text-white shadow-lg shadow-blue-600/30 transition-all duration-300 hover:shadow-xl hover:shadow-blue-600/40 hover:scale-[1.03] active:scale-[0.98]">
+              {/* shimmer sweep */}
+              <span className="absolute inset-0 -translate-x-full skew-x-[-20deg] bg-white/20 transition-transform duration-500 group-hover:translate-x-[150%]" />
+              <span className="relative flex items-center gap-2">
+                Get started — it's free
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20 transition-transform duration-200 group-hover:translate-x-0.5">
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </span>
+              </span>
+            </button>
+
+            {/* ── improved watch demo button ── */}
+            <button className="group flex h-12 items-center gap-3 rounded-full border border-slate-200 bg-white py-2 pl-2 pr-6 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:border-slate-300 hover:shadow-md hover:-translate-y-px">
+              <span className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-blue-600 to-indigo-600 shadow-md shadow-blue-600/30 transition-shadow duration-200 group-hover:shadow-lg group-hover:shadow-blue-600/40">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-25" />
+                <svg className="relative h-3 w-3 translate-x-px text-white" viewBox="0 0 12 12" fill="currentColor">
+                  <path d="M3 1.5l7 4.5-7 4.5V1.5z" />
+                </svg>
+              </span>
               See how it works
-            </Button>
+            </button>
+
           </div>
-          <div className="mt-10 flex items-center gap-4">
-            <div className="flex -space-x-2.5">
-              {[["AK","from-blue-500 to-blue-600"],["SM","from-emerald-500 to-emerald-600"],["BR","from-amber-500 to-orange-600"],["FH","from-rose-500 to-pink-600"]].map(([t,c]) => (
-                <div key={t} className={`flex h-9 w-9 items-center justify-center rounded-full bg-linear-to-br ${c} text-[11px] font-semibold text-white ring-2 ring-white shadow-sm`}>{t}</div>
-              ))}
-            </div>
-            <div>
-              <div className="flex items-center gap-1 text-amber-400">
-                {[...Array(5)].map((_,i) => <Star key={i} className="h-3.5 w-3.5 fill-current" />)}
-                <span className="ml-1.5 text-xs font-semibold text-slate-700">4.9</span>
+             <div className="mt-10 flex flex-wrap items-center gap-6">
+            {/* verified users pill */}
+            <div className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-2.5 shadow-sm">
+              {/* stacked avatars with real photos via ui-avatars */}
+              <div className="flex -space-x-3">
+                {[
+                  { name: "Aisha K",  bg: "from-violet-500 to-purple-600" },
+                  { name: "Saad M",   bg: "from-emerald-500 to-teal-600"  },
+                  { name: "Bilal R",  bg: "from-orange-500 to-rose-500"   },
+                  { name: "Fatima H", bg: "from-blue-500 to-indigo-600"   },
+                  { name: "+",        bg: "from-slate-400 to-slate-500"   },
+                ].map(({ name, bg }) => (
+                  <div
+                    key={name}
+                    className={`flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-br ${bg} text-[10px] font-bold text-white ring-2 ring-white shadow-sm`}
+                  >
+                    {name === "+" ? "49k" : name.split(" ").map(s => s[0]).join("")}
+                  </div>
+                ))}
               </div>
-              <p className="text-sm text-slate-600">Trusted by <span className="font-semibold text-slate-900">50,000+</span> users</p>
+              <div className="border-l border-slate-100 pl-3">
+                <p className="text-xs font-bold text-slate-900">50,000+ users</p>
+                <p className="text-[11px] text-slate-500">across Pakistan</p>
+              </div>
             </div>
+
+            {/* rating pill */}
+           
+
+            {/* verified badge */}
+           
           </div>
         </div>
         <div className="relative flex items-center justify-center">
