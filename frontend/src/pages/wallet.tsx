@@ -403,7 +403,7 @@ export function WalletPage() {
 
               {/* actions */}
               <div className="mt-5 flex gap-2">
-                <Link to="/send">
+                <Link to="/sendMoney">
                   <Button className="h-9 rounded-xl bg-white text-blue-700 text-xs font-bold shadow hover:bg-blue-50">
                     <Send className="mr-1.5 h-3.5 w-3.5" /> Send Money
                   </Button>

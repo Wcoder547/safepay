@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-/* ── fake user data ── */
+
 const USER = {
   id:               "66a78868-018a-4376-91c0-04b9b193fae5",
   full_name:        "Waseem Akram",
@@ -26,7 +26,7 @@ const USER = {
   wallet_balance:   45200,
 };
 
-/* ── helpers ── */
+
 function LogoMark({ size = 32 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
@@ -75,7 +75,7 @@ function InfoRow({
   );
 }
 
-/* ── Change Password Modal ── */
+
 function ChangePasswordModal({ onClose }: { onClose: () => void }) {
   const [form, setForm]     = useState({ current: "", newPass: "", confirm: "" });
   const [show, setShow]     = useState({ current: false, newPass: false, confirm: false });
@@ -175,7 +175,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-/* ── Change PIN Modal ── */
+
 function ChangePinModal({ onClose }: { onClose: () => void }) {
   const [form, setForm]   = useState({ current: "", newPin: "", confirm: "" });
   const [error, setError] = useState("");
@@ -267,9 +267,7 @@ function ChangePinModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-/* ══════════════════════════════════════════
-   PROFILE PAGE
-══════════════════════════════════════════ */
+
 export function ProfilePage() {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showPinModal,      setShowPinModal]      = useState(false);

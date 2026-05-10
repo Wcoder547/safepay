@@ -223,7 +223,7 @@ export function SettingsPage() {
   { label: "Send Money",    to: "/send",          icon: Send            },
   { label: "Wallet",        to: "/wallet",        icon: Wallet          },
   { label: "History",       to: "/history",       icon: CreditCard      },
-  { label: "Notifications", to: "/notifications", icon: Bell            },
+  { label: "Notifications", to: "/notification", icon: Bell            },
   { label: "Profile",       to: "/profile",       icon: User            },
   { label: "Settings",      to: "/settings",      icon: Settings,  active: true },
           ].map(({ label, to, icon: Icon, active }: any) => (
