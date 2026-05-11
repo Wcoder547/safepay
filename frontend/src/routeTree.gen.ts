@@ -10,20 +10,28 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WalletRouteImport } from './routes/wallet'
+import { Route as Verify_phoneRouteImport } from './routes/verify_phone'
 import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SendMoneyRouteImport } from './routes/sendMoney'
+import { Route as Reset_passwordRouteImport } from './routes/reset_password'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as NotificationRouteImport } from './routes/notification'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as FraudRouteImport } from './routes/fraud'
+import { Route as Forgot_passwordRouteImport } from './routes/forgot_password'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 
 const WalletRoute = WalletRouteImport.update({
   id: '/wallet',
   path: '/wallet',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Verify_phoneRoute = Verify_phoneRouteImport.update({
+  id: '/verify_phone',
+  path: '/verify_phone',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignUpRoute = SignUpRouteImport.update({
@@ -46,6 +54,11 @@ const SendMoneyRoute = SendMoneyRouteImport.update({
   path: '/sendMoney',
   getParentRoute: () => rootRouteImport,
 } as any)
+const Reset_passwordRoute = Reset_passwordRouteImport.update({
+  id: '/reset_password',
+  path: '/reset_password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -66,6 +79,11 @@ const FraudRoute = FraudRouteImport.update({
   path: '/fraud',
   getParentRoute: () => rootRouteImport,
 } as any)
+const Forgot_passwordRoute = Forgot_passwordRouteImport.update({
+  id: '/forgot_password',
+  path: '/forgot_password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -80,41 +98,50 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/forgot_password': typeof Forgot_passwordRoute
   '/fraud': typeof FraudRoute
   '/history': typeof HistoryRoute
   '/notification': typeof NotificationRoute
   '/profile': typeof ProfileRoute
+  '/reset_password': typeof Reset_passwordRoute
   '/sendMoney': typeof SendMoneyRoute
   '/settings': typeof SettingsRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/verify_phone': typeof Verify_phoneRoute
   '/wallet': typeof WalletRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/forgot_password': typeof Forgot_passwordRoute
   '/fraud': typeof FraudRoute
   '/history': typeof HistoryRoute
   '/notification': typeof NotificationRoute
   '/profile': typeof ProfileRoute
+  '/reset_password': typeof Reset_passwordRoute
   '/sendMoney': typeof SendMoneyRoute
   '/settings': typeof SettingsRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/verify_phone': typeof Verify_phoneRoute
   '/wallet': typeof WalletRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/forgot_password': typeof Forgot_passwordRoute
   '/fraud': typeof FraudRoute
   '/history': typeof HistoryRoute
   '/notification': typeof NotificationRoute
   '/profile': typeof ProfileRoute
+  '/reset_password': typeof Reset_passwordRoute
   '/sendMoney': typeof SendMoneyRoute
   '/settings': typeof SettingsRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/verify_phone': typeof Verify_phoneRoute
   '/wallet': typeof WalletRoute
 }
 export interface FileRouteTypes {
@@ -122,54 +149,66 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/dashboard'
+    | '/forgot_password'
     | '/fraud'
     | '/history'
     | '/notification'
     | '/profile'
+    | '/reset_password'
     | '/sendMoney'
     | '/settings'
     | '/sign-in'
     | '/sign-up'
+    | '/verify_phone'
     | '/wallet'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/dashboard'
+    | '/forgot_password'
     | '/fraud'
     | '/history'
     | '/notification'
     | '/profile'
+    | '/reset_password'
     | '/sendMoney'
     | '/settings'
     | '/sign-in'
     | '/sign-up'
+    | '/verify_phone'
     | '/wallet'
   id:
     | '__root__'
     | '/'
     | '/dashboard'
+    | '/forgot_password'
     | '/fraud'
     | '/history'
     | '/notification'
     | '/profile'
+    | '/reset_password'
     | '/sendMoney'
     | '/settings'
     | '/sign-in'
     | '/sign-up'
+    | '/verify_phone'
     | '/wallet'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
+  Forgot_passwordRoute: typeof Forgot_passwordRoute
   FraudRoute: typeof FraudRoute
   HistoryRoute: typeof HistoryRoute
   NotificationRoute: typeof NotificationRoute
   ProfileRoute: typeof ProfileRoute
+  Reset_passwordRoute: typeof Reset_passwordRoute
   SendMoneyRoute: typeof SendMoneyRoute
   SettingsRoute: typeof SettingsRoute
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
+  Verify_phoneRoute: typeof Verify_phoneRoute
   WalletRoute: typeof WalletRoute
 }
 
@@ -180,6 +219,13 @@ declare module '@tanstack/react-router' {
       path: '/wallet'
       fullPath: '/wallet'
       preLoaderRoute: typeof WalletRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verify_phone': {
+      id: '/verify_phone'
+      path: '/verify_phone'
+      fullPath: '/verify_phone'
+      preLoaderRoute: typeof Verify_phoneRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sign-up': {
@@ -210,6 +256,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SendMoneyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reset_password': {
+      id: '/reset_password'
+      path: '/reset_password'
+      fullPath: '/reset_password'
+      preLoaderRoute: typeof Reset_passwordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/profile': {
       id: '/profile'
       path: '/profile'
@@ -238,6 +291,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FraudRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/forgot_password': {
+      id: '/forgot_password'
+      path: '/forgot_password'
+      fullPath: '/forgot_password'
+      preLoaderRoute: typeof Forgot_passwordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
@@ -258,14 +318,17 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
+  Forgot_passwordRoute: Forgot_passwordRoute,
   FraudRoute: FraudRoute,
   HistoryRoute: HistoryRoute,
   NotificationRoute: NotificationRoute,
   ProfileRoute: ProfileRoute,
+  Reset_passwordRoute: Reset_passwordRoute,
   SendMoneyRoute: SendMoneyRoute,
   SettingsRoute: SettingsRoute,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
+  Verify_phoneRoute: Verify_phoneRoute,
   WalletRoute: WalletRoute,
 }
 export const routeTree = rootRouteImport

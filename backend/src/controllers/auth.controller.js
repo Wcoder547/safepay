@@ -17,6 +17,7 @@ import { generateOtp, hashOtp } from "../utils/otp.js";
 
 const register = AsyncHandler(async (req, res) => {
   const { full_name, email, phone, cnic, password, pin } = req.body;
+  
 
   const requiredFields = { full_name, email, phone, cnic, password, pin };
   const missingFields = Object.entries(requiredFields)
@@ -459,6 +460,7 @@ const forgotPassword = AsyncHandler(async (req, res) => {
 
 const resetPassword = AsyncHandler(async (req, res) => {
   const { phone, otp_code, new_password, confirm_password } = req.body;
+
 
   // Validate all fields present
   if (!phone || !otp_code || !new_password || !confirm_password) {

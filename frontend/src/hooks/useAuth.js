@@ -4,9 +4,7 @@ import { authApi } from "../api/endpoints/auth.api";
 import useAuthStore from "../store/auth.store";
 import { QUERY_KEYS } from "../api/queryKeys";
 
-// ─────────────────────────────────────────
-// GET current user (runs on app load)
-// ─────────────────────────────────────────
+
 export const useMe = () => {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
 
@@ -21,9 +19,7 @@ export const useMe = () => {
   });
 };
 
-// ─────────────────────────────────────────
-// REGISTER
-// ─────────────────────────────────────────
+
 export const useRegister = () => {
   const setAuth    = useAuthStore((s) => s.setAuth);
   const navigate   = useNavigate();
@@ -34,15 +30,12 @@ export const useRegister = () => {
     onSuccess: ({ data }) => {
       const { user, access_token } = data.data;
       setAuth(user, access_token);
-      // user is not verified yet → go to OTP page
-      navigate({ to: "/verify-phone" });
+      navigate({ to: "/verify_phone" });
     },
   });
 };
 
-// ─────────────────────────────────────────
-// LOGIN
-// ─────────────────────────────────────────
+
 export const useLogin = () => {
   const setAuth  = useAuthStore((s) => s.setAuth);
   const navigate = useNavigate();
@@ -56,7 +49,7 @@ export const useLogin = () => {
 
       if (requires_verification) {
         // Unverified user → send OTP then verify
-        navigate({ to: "/verify-phone" });
+        navigate({ to: "/verify_phone" });
       } else {
         navigate({ to: "/dashboard" });
       }
@@ -64,9 +57,7 @@ export const useLogin = () => {
   });
 };
 
-// ─────────────────────────────────────────
-// LOGOUT
-// ─────────────────────────────────────────
+
 export const useLogout = () => {
   const logout      = useAuthStore((s) => s.logout);
   const queryClient = useQueryClient();
@@ -84,18 +75,14 @@ export const useLogout = () => {
   });
 };
 
-// ─────────────────────────────────────────
-// SEND OTP
-// ─────────────────────────────────────────
+
 export const useSendOtp = () => {
   return useMutation({
     mutationFn: (type) => authApi.sendOtp(type),
   });
 };
 
-// ─────────────────────────────────────────
-// VERIFY OTP
-// ─────────────────────────────────────────
+
 export const useVerifyOtp = () => {
   const updateUser  = useAuthStore((s) => s.updateUser);
   const queryClient = useQueryClient();
@@ -119,18 +106,13 @@ export const useVerifyOtp = () => {
   });
 };
 
-// ─────────────────────────────────────────
-// FORGOT PASSWORD
-// ─────────────────────────────────────────
+
 export const useForgotPassword = () => {
   return useMutation({
     mutationFn: (phone) => authApi.forgotPassword(phone),
   });
 };
 
-// ─────────────────────────────────────────
-// RESET PASSWORD
-// ─────────────────────────────────────────
 export const useResetPassword = () => {
   const navigate = useNavigate();
 
@@ -138,23 +120,19 @@ export const useResetPassword = () => {
     mutationFn: (data) => authApi.resetPassword(data),
 
     onSuccess: () => {
-      navigate({ to: "/login" });
+      navigate({ to: "/sign-in" });
     },
   });
 };
 
-// ─────────────────────────────────────────
-// CHANGE PIN
-// ─────────────────────────────────────────
+
 export const useChangePin = () => {
   return useMutation({
     mutationFn: (data) => authApi.changePin(data),
   });
 };
 
-// ─────────────────────────────────────────
-// VERIFY PIN (before send money)
-// ─────────────────────────────────────────
+
 export const useVerifyPin = () => {
   return useMutation({
     mutationFn: (pin) => authApi.verifyPin(pin),
