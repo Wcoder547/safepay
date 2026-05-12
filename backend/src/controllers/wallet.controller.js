@@ -5,7 +5,6 @@ import { prisma } from "../db/index.js";
 import bcrypt from "bcryptjs";
 import { checkFraud } from "../services/fraud.service.js";
 
-
 const getBalance = AsyncHandler(async (req, res) => {
   const wallet = await prisma.wallet.findUnique({
     where: { user_id: req.user.id },
@@ -21,11 +20,10 @@ const getBalance = AsyncHandler(async (req, res) => {
     throw new ApiError(404, "Wallet not found.", { code: "NOT_FOUND" });
   }
 
-  return res.status(200).json(
-    new ApiResponse(200, { wallet }, "Wallet fetched successfully.")
-  );
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { wallet }, "Wallet fetched successfully."));
 });
-
 
 const topUp = AsyncHandler(async (req, res) => {
   const { amount } = req.body;
@@ -97,16 +95,15 @@ const topUp = AsyncHandler(async (req, res) => {
         currency: wallet.currency,
         topped_up: topupAmount,
       },
-      `Rs. ${topupAmount} added to your wallet.`
-    )
+      `Rs. ${topupAmount} added to your wallet.`,
+    ),
   );
-}); 
-
+});
 
 const sendMoney = AsyncHandler(async (req, res) => {
   const { receiver_phone, amount, note, pin } = req.body;
 
-
+  // ── 1. Validate input ──
   if (!receiver_phone || !amount || !pin) {
     throw new ApiError(422, "receiver_phone, amount and pin are required.", {
       code: "VALIDATION_ERROR",
@@ -134,7 +131,7 @@ const sendMoney = AsyncHandler(async (req, res) => {
 
   const sendAmount = parseFloat(amount);
 
-  // 2. Find receiver
+  // ── 2. Find receiver ──
   const receiver = await prisma.user.findUnique({
     where: { phone: receiver_phone },
     include: { wallet: true },
@@ -146,27 +143,27 @@ const sendMoney = AsyncHandler(async (req, res) => {
     });
   }
 
-  // 3. No self-transfer
+  // ── 3. No self-transfer ──
   if (receiver.id === req.user.id) {
     throw new ApiError(400, "You cannot send money to yourself.", {
       code: "SELF_TRANSFER",
     });
   }
 
-  // 4. Receiver not frozen
+  // ── 4. Receiver not frozen ──
   if (receiver.is_frozen) {
     throw new ApiError(400, "Receiver account is unavailable.", {
       code: "RECEIVER_FROZEN",
     });
   }
 
-  // 5. Get sender details
+  // ── 5. Get sender ──
   const sender = await prisma.user.findUnique({
     where: { id: req.user.id },
     include: { wallet: true },
   });
 
-  // 6. Check balance
+  // ── 6. Check balance ──
   if (parseFloat(sender.wallet.balance) < sendAmount) {
     throw new ApiError(400, "Insufficient balance.", {
       code: "INSUFFICIENT_BALANCE",
@@ -177,13 +174,13 @@ const sendMoney = AsyncHandler(async (req, res) => {
     });
   }
 
-  // 7. Verify PIN
+  // ── 7. Verify PIN ──
   const isPinValid = await bcrypt.compare(pin, sender.pin_hash);
   if (!isPinValid) {
     throw new ApiError(401, "Incorrect PIN.", { code: "INVALID_PIN" });
   }
 
-  // 8. ML Fraud Check
+  // ── 8. ML Fraud Check ──
   const [senderTxnCount, receiverTxnCount] = await Promise.all([
     prisma.transaction.count({ where: { sender_id: req.user.id } }),
     prisma.transaction.count({ where: { receiver_id: receiver.id } }),
@@ -199,7 +196,7 @@ const sendMoney = AsyncHandler(async (req, res) => {
 
   const { risk_score, is_fraud, reasons, fallback } = fraudResult;
 
-  // 9. BLOCKED
+  // ── 9. BLOCKED ──
   if (is_fraud) {
     const blockedTxn = await prisma.$transaction(async (tx) => {
       const txn = await tx.transaction.create({
@@ -214,8 +211,9 @@ const sendMoney = AsyncHandler(async (req, res) => {
           fraud_reasons: reasons,
           device_ip: req.ip,
           hour_of_day: new Date().getHours(),
-          device_type: req.headers["user-agent"]
-            ?.includes("Mobile") ? "mobile" : "web",
+          device_type: req.headers["user-agent"]?.includes("Mobile")
+            ? "mobile"
+            : "web",
         },
       });
 
@@ -242,16 +240,20 @@ const sendMoney = AsyncHandler(async (req, res) => {
     });
 
     return res.status(200).json(
-      new ApiResponse(200, {
-        status: "BLOCKED",
-        risk_score,
-        reasons,
-        transaction_id: blockedTxn.id,
-      }, "Transaction blocked due to suspicious activity.")
+      new ApiResponse(
+        200,
+        {
+          status: "BLOCKED",
+          risk_score,
+          reasons,
+          transaction_id: blockedTxn.id,
+        },
+        "Transaction blocked due to suspicious activity.",
+      ),
     );
   }
 
-  // 10. APPROVED — full ACID transfer
+  // ── 10. APPROVED — full ACID transfer ──
   const txn = await prisma.$transaction(async (tx) => {
     const updatedSender = await tx.wallet.update({
       where: { user_id: req.user.id },
@@ -275,8 +277,9 @@ const sendMoney = AsyncHandler(async (req, res) => {
         fraud_reasons: reasons,
         device_ip: req.ip,
         hour_of_day: new Date().getHours(),
-        device_type: req.headers["user-agent"]
-          ?.includes("Mobile") ? "mobile" : "web",
+        device_type: req.headers["user-agent"]?.includes("Mobile")
+          ? "mobile"
+          : "web",
       },
     });
 
@@ -330,35 +333,37 @@ const sendMoney = AsyncHandler(async (req, res) => {
   });
 
   return res.status(200).json(
-    new ApiResponse(200, {
-      status: "APPROVED",
-      risk_score,
-      fallback: fallback || false,
-      transaction_id: txn.id,
-      amount: sendAmount,
-      receiver: {
-        name: receiver.full_name,
-        phone: receiver_phone,
+    new ApiResponse(
+      200,
+      {
+        status: "APPROVED",
+        risk_score,
+        fallback: fallback || false,
+        transaction_id: txn.id,
+        amount: sendAmount,
+        receiver: {
+          name: receiver.full_name,
+          phone: receiver_phone,
+        },
       },
-    }, `Rs. ${sendAmount} sent to ${receiver.full_name} successfully.`)
+      `Rs. ${sendAmount} sent to ${receiver.full_name} successfully.`,
+    ),
   );
 });
-
 
 const getHistory = AsyncHandler(async (req, res) => {
   const { page = 1, limit = 20, status, type } = req.query;
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
   let where = {
-    OR: [
-      { sender_id: req.user.id },
-      { receiver_id: req.user.id },
-    ],
+    OR: [{ sender_id: req.user.id }, { receiver_id: req.user.id }],
   };
 
   if (status) where.status = status;
-  if (type === "SENT") where = { sender_id: req.user.id, ...(status && { status }) };
-  if (type === "RECEIVED") where = { receiver_id: req.user.id, ...(status && { status }) };
+  if (type === "SENT")
+    where = { sender_id: req.user.id, ...(status && { status }) };
+  if (type === "RECEIVED")
+    where = { receiver_id: req.user.id, ...(status && { status }) };
 
   const [transactions, total] = await Promise.all([
     prisma.transaction.findMany({
@@ -387,29 +392,43 @@ const getHistory = AsyncHandler(async (req, res) => {
   ]);
 
   return res.status(200).json(
-    new ApiResponse(200, {
-      transactions,
-      pagination: {
-        total,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        pages: Math.ceil(total / parseInt(limit)),
+    new ApiResponse(
+      200,
+      {
+        transactions,
+        pagination: {
+          total,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          pages: Math.ceil(total / parseInt(limit)),
+        },
       },
-    }, "Transaction history fetched.")
+      "Transaction history fetched.",
+    ),
   );
 });
 
-
 const getWalletLogs = AsyncHandler(async (req, res) => {
-  const { page = 1, limit = 20 } = req.query;
+  const { page = 1, limit = 20, export: exportCsv, type, search } = req.query;
+  const isExport = exportCsv === "true";
   const skip = (parseInt(page) - 1) * parseInt(limit);
+
+  // build where clause
+  const where = {
+    user_id: req.user.id,
+    ...(type && type !== "ALL" ? { type } : {}),
+    ...(search
+      ? {
+          transaction_id: { contains: search, mode: "insensitive" },
+        }
+      : {}),
+  };
 
   const [logs, total] = await Promise.all([
     prisma.walletLog.findMany({
-      where: { user_id: req.user.id },
+      where,
       orderBy: { created_at: "desc" },
-      skip,
-      take: parseInt(limit),
+      ...(isExport ? {} : { skip, take: parseInt(limit) }),
       select: {
         id: true,
         type: true,
@@ -420,22 +439,153 @@ const getWalletLogs = AsyncHandler(async (req, res) => {
         transaction_id: true,
       },
     }),
-    prisma.walletLog.count({
-      where: { user_id: req.user.id },
+    prisma.walletLog.count({ where }),
+  ]);
+
+  if (isExport) {
+    const csv = [
+      "Date,Type,Amount,Balance Before,Balance After,Txn ID",
+      ...logs.map((l) =>
+        [
+          new Date(l.created_at).toLocaleString(),
+          l.type,
+          l.amount,
+          l.balance_before,
+          l.balance_after,
+          l.transaction_id ?? "",
+        ].join(","),
+      ),
+    ].join("\n");
+
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=wallet-logs.csv",
+    );
+    return res.send(csv);
+  }
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        logs,
+        pagination: {
+          total,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          pages: Math.ceil(total / parseInt(limit)),
+        },
+      },
+      "Wallet logs fetched.",
+    ),
+  );
+});
+
+const getStats = AsyncHandler(async (req, res) => {
+  const userId = req.user.id;
+
+  const [sent, received, blocked, total_transactions] = await Promise.all([
+    prisma.transaction.aggregate({
+      where: { sender_id: userId, status: "APPROVED" },
+      _sum: { amount: true },
+    }),
+    prisma.transaction.aggregate({
+      where: { receiver_id: userId, status: "APPROVED" },
+      _sum: { amount: true },
+    }),
+    prisma.transaction.aggregate({
+      where: { sender_id: userId, status: "BLOCKED" },
+      _sum: { amount: true },
+    }),
+    prisma.transaction.count({
+      where: {
+        OR: [{ sender_id: userId }, { receiver_id: userId }],
+      },
     }),
   ]);
 
   return res.status(200).json(
-    new ApiResponse(200, {
-      logs,
-      pagination: {
-        total,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        pages: Math.ceil(total / parseInt(limit)),
+    new ApiResponse(
+      200,
+      {
+        total_sent: sent._sum.amount || 0,
+        total_received: received._sum.amount || 0,
+        total_blocked: blocked._sum.amount || 0,
+        total_transactions,
       },
-    }, "Wallet logs fetched.")
+      "Wallet stats fetched.",
+    ),
   );
 });
 
-export { getBalance, topUp, sendMoney, getHistory, getWalletLogs };
+const lookupUser = AsyncHandler(async (req, res) => {
+  const { phone } = req.query;
+  
+
+  if (!phone) {
+    throw new ApiError(422, "Phone number is required.", {
+      code: "VALIDATION_ERROR",
+    });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { phone },
+    select: { id: true, full_name: true, phone: true, is_frozen: true },
+  });
+
+  if (!user) {
+    throw new ApiError(404, "No SafePay account found on this number.", {
+      code: "USER_NOT_FOUND",
+    });
+  }
+
+
+  if (user.id === req.user.id) {
+    throw new ApiError(400, "You cannot send money to yourself.", {
+      code: "SELF_TRANSFER",
+    });
+  }
+
+  if (user.is_frozen) {
+    throw new ApiError(400, "This account is unavailable.", {
+      code: "ACCOUNT_FROZEN",
+    });
+  }
+
+  return res.status(200).json(
+    new ApiResponse(200, { full_name: user.full_name, phone: user.phone }, "User found.")
+  );
+});
+
+const getRecentContacts = AsyncHandler(async (req, res) => {
+  const recentTxns = await prisma.transaction.findMany({
+    where:   { sender_id: req.user.id, status: "APPROVED" },
+    orderBy: { created_at: "desc" },
+    take:    50,
+    select: {
+      receiver: {
+        select: { full_name: true, phone: true },
+      },
+    },
+  });
+
+  // Deduplicate by phone, keep most recent first, max 5
+  const seen     = new Set();
+  const contacts = [];
+
+  for (const txn of recentTxns) {
+    const phone = txn.receiver.phone;
+    if (!seen.has(phone)) {
+      seen.add(phone);
+      contacts.push({ full_name: txn.receiver.full_name, phone });
+    }
+    if (contacts.length === 5) break;
+  }
+
+  return res.status(200).json(
+    new ApiResponse(200, contacts, "Recent contacts fetched.")
+  );
+});
+
+export { getBalance, topUp, sendMoney, getHistory, getWalletLogs, getStats , getRecentContacts, lookupUser};

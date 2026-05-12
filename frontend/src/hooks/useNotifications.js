@@ -2,9 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { notificationsApi } from "../api/endpoints/notifications.api";
 import { QUERY_KEYS } from "../api/queryKeys";
 
-// ─────────────────────────────────────────
-// GET notifications
-// ─────────────────────────────────────────
+
 export const useNotifications = (params = {}) => {
   return useQuery({
     queryKey: [...QUERY_KEYS.notifications, params],
@@ -16,9 +14,7 @@ export const useNotifications = (params = {}) => {
   });
 };
 
-// ─────────────────────────────────────────
-// MARK one notification read
-// ─────────────────────────────────────────
+
 export const useMarkOneRead = () => {
   const queryClient = useQueryClient();
 
@@ -61,9 +57,7 @@ export const useMarkOneRead = () => {
   });
 };
 
-// ─────────────────────────────────────────
-// MARK all notifications read
-// ─────────────────────────────────────────
+
 export const useMarkAllRead = () => {
   const queryClient = useQueryClient();
 

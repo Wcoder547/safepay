@@ -2,9 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { walletApi } from "../api/endpoints/wallet.api";
 import { QUERY_KEYS } from "../api/queryKeys";
 
-// ─────────────────────────────────────────
-// GET wallet balance
-// ─────────────────────────────────────────
+
 export const useWallet = () => {
   return useQuery({
     queryKey: QUERY_KEYS.wallet,
@@ -16,9 +14,20 @@ export const useWallet = () => {
   });
 };
 
-// ─────────────────────────────────────────
-// TOP UP wallet
-// ─────────────────────────────────────────
+
+export const useWalletStats = () => {
+  return useQuery({
+    queryKey: QUERY_KEYS.walletStats,       
+    queryFn: async () => {
+      const { data } = await walletApi.getStats();
+      return data.data;
+    },
+    refetchInterval: 1000 * 60,
+  });
+};
+
+
+
 export const useTopUp = () => {
   const queryClient = useQueryClient();
 
@@ -33,9 +42,7 @@ export const useTopUp = () => {
   });
 };
 
-// ─────────────────────────────────────────
-// SEND money ⭐ core feature
-// ─────────────────────────────────────────
+
 export const useSendMoney = () => {
   const queryClient = useQueryClient();
 
@@ -52,9 +59,7 @@ export const useSendMoney = () => {
   });
 };
 
-// ─────────────────────────────────────────
-// GET transaction history (paginated)
-// ─────────────────────────────────────────
+
 export const useTransactionHistory = (params = {}) => {
   return useQuery({
     queryKey: [...QUERY_KEYS.transactions, params],
@@ -66,9 +71,7 @@ export const useTransactionHistory = (params = {}) => {
   });
 };
 
-// ─────────────────────────────────────────
-// GET wallet audit logs (paginated)
-// ─────────────────────────────────────────
+
 export const useWalletLogs = (params = {}) => {
   return useQuery({
     queryKey: [...QUERY_KEYS.walletLogs, params],
@@ -77,5 +80,22 @@ export const useWalletLogs = (params = {}) => {
       return data.data;
     },
     keepPreviousData: true,
+  });
+};
+
+
+
+export const useExportLogs = () => {
+  return useMutation({
+    mutationFn: () => walletApi.exportLogs(),
+   onSuccess: (response) => {
+      const blob = new Blob([response.data]);
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href     = url;
+      a.download = "wallet-logs.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    },
   });
 };

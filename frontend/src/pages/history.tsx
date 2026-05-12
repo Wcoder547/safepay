@@ -1,52 +1,199 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "@tanstack/react-router";
 import {
-  ArrowDownLeft, ArrowUpRight,   ChevronLeft, ChevronRight, Download, LayoutDashboard, Search, Shield,
-  Send, Wallet, CreditCard, Settings,
-  CheckCircle2, XCircle, Clock, Eye,
-  SlidersHorizontal, X, TrendingUp, TrendingDown,
-  Bell,
-  User,
-  
+  ArrowLeft, ArrowDownLeft, ArrowUpRight,
+  ChevronLeft, ChevronRight, Download,
+  LayoutDashboard, Search, Shield, Send, Wallet, CreditCard, Settings,
+  CheckCircle2, XCircle, Clock, Eye, SlidersHorizontal, X,
+  TrendingUp, TrendingDown, Bell, User, Loader2, AlertCircle, RefreshCw,
+  Menu, LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { walletApi } from "@/api/endpoints/wallet.api";
 
-/* ── fake data ── */
-const TRANSACTIONS = [
-  { id: "TXN-A1B2C3D4", name: "Sara Ali",      phone: "0321 9876543", type: "CREDIT",  amount: 15000, status: "APPROVED", risk_score: 5,  time: "Today, 1:12 PM",     note: "Salary",        avatar: "from-emerald-500 to-teal-600"   },
-  { id: "TXN-B2C3D4E5", name: "Ahmed Khan",    phone: "0300 1234567", type: "DEBIT",   amount: 2000,  status: "APPROVED", risk_score: 12, time: "Today, 2:45 PM",     note: "Rent",          avatar: "from-blue-500 to-indigo-600"    },
-  { id: "TXN-C3D4E5F6", name: "Bilal Shah",    phone: "0333 5554444", type: "DEBIT",   amount: 1200,  status: "BLOCKED",  risk_score: 87, time: "Today, 11:30 AM",    note: "Unknown",       avatar: "from-amber-500 to-orange-600"   },
-  { id: "TXN-D4E5F6G7", name: "Fatima Hassan", phone: "0312 1112233", type: "CREDIT",  amount: 10000, status: "APPROVED", risk_score: 8,  time: "Yesterday, 10:05 AM",note: "Freelance",     avatar: "from-rose-500 to-pink-600"      },
-  { id: "TXN-E5F6G7H8", name: "Usman Tariq",   phone: "0345 6667788", type: "DEBIT",   amount: 750,   status: "APPROVED", risk_score: 3,  time: "Yesterday, 9:20 AM", note: "Lunch",         avatar: "from-violet-500 to-purple-600"  },
-  { id: "TXN-F6G7H8I9", name: "Hina Malik",    phone: "0311 9998887", type: "CREDIT",  amount: 500,   status: "APPROVED", risk_score: 2,  time: "Mon, 4:30 PM",       note: "Returned",      avatar: "from-cyan-500 to-blue-600"      },
-  { id: "TXN-G7H8I9J0", name: "Zara Sheikh",   phone: "0322 3334445", type: "DEBIT",   amount: 5000,  status: "APPROVED", risk_score: 22, time: "Mon, 2:00 PM",       note: "Shopping",      avatar: "from-fuchsia-500 to-rose-600"   },
-  { id: "TXN-H8I9J0K1", name: "Ali Raza",      phone: "0301 7778889", type: "DEBIT",   amount: 3500,  status: "BLOCKED",  risk_score: 94, time: "Sun, 3:15 AM",       note: "Suspicious",    avatar: "from-slate-500 to-gray-600"     },
-  { id: "TXN-I9J0K1L2", name: "Ayesha Khan",   phone: "0315 6665554", type: "CREDIT",  amount: 8000,  status: "APPROVED", risk_score: 6,  time: "Sun, 11:00 AM",      note: "Commission",    avatar: "from-lime-500 to-green-600"     },
-  { id: "TXN-J0K1L2M3", name: "Hamza Butt",    phone: "0344 2223334", type: "DEBIT",   amount: 450,   status: "APPROVED", risk_score: 4,  time: "Sat, 7:30 PM",       note: "Tea",           avatar: "from-yellow-500 to-amber-600"   },
+/* ─────────────────────────────────────────────────────────────
+   TYPES
+───────────────────────────────────────────────────────────── */
+
+interface RawTransaction {
+  id: string;
+  amount: string;
+  note: string | null;
+  status: "APPROVED" | "BLOCKED";
+  risk_score: string | null;
+  is_fraud: boolean;
+  hour_of_day: number | null;
+  created_at: string;
+  sender:   { id: string; full_name: string; phone: string };
+  receiver: { id: string; full_name: string; phone: string };
+}
+
+interface NormalizedTxn {
+  id: string;
+  name: string;
+  phone: string;
+  type: "CREDIT" | "DEBIT";
+  amount: number;
+  status: "APPROVED" | "BLOCKED";
+  risk_score: number;
+  time: string;
+  note: string;
+  avatar: string;
+  sender:   { id: string; full_name: string; phone: string };
+  receiver: { id: string; full_name: string; phone: string };
+}
+
+interface Pagination {
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   CONSTANTS / NAV
+───────────────────────────────────────────────────────────── */
+
+const STATUS_FILTERS = ["All", "Approved", "Blocked"] as const;
+const TYPE_FILTERS   = ["All", "Sent", "Received"] as const;
+const PER_PAGE       = 20;
+
+const AVATAR_GRADIENTS = [
+  "from-emerald-500 to-teal-600",
+  "from-blue-500 to-indigo-600",
+  "from-amber-500 to-orange-600",
+  "from-rose-500 to-pink-600",
+  "from-violet-500 to-purple-600",
+  "from-cyan-500 to-blue-600",
+  "from-fuchsia-500 to-rose-600",
+  "from-lime-500 to-green-600",
+  "from-yellow-500 to-amber-600",
+  "from-slate-500 to-gray-600",
 ];
 
-const STATUS_FILTERS = ["All", "Approved", "Blocked"];
-const TYPE_FILTERS   = ["All", "Sent", "Received"];
+const NAV = [
+  { icon: LayoutDashboard, label: "Dashboard",     to: "/dashboard"    },
+  { icon: Send,            label: "Send Money",    to: "/sendMoney"    },
+  { icon: Wallet,          label: "Wallet",        to: "/wallet"       },
+  { icon: CreditCard,      label: "History",       to: "/history"      },
+  { icon: Bell,            label: "Notifications", to: "/notification" },
+  { icon: User,            label: "Profile",       to: "/profile"      },
+  { icon: Settings,        label: "Settings",      to: "/settings"     },
+];
+
+/* ─────────────────────────────────────────────────────────────
+   HELPERS
+───────────────────────────────────────────────────────────── */
+
+function avatarGradient(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+  return AVATAR_GRADIENTS[hash % AVATAR_GRADIENTS.length];
+}
+
+function initials(name: string): string {
+  return name.split(" ").map(s => s[0]).join("").toUpperCase().slice(0, 2);
+}
+
+function formatDate(iso: string): string {
+  const date = new Date(iso);
+  const now  = new Date();
+  const diff = now.getTime() - date.getTime();
+  const days = Math.floor(diff / 86_400_000);
+  const time = date.toLocaleTimeString("en-PK", { hour: "numeric", minute: "2-digit" });
+  if (days === 0) return `Today, ${time}`;
+  if (days === 1) return `Yesterday, ${time}`;
+  if (days < 7)  return `${date.toLocaleDateString("en-PK", { weekday: "short" })}, ${time}`;
+  return date.toLocaleDateString("en-PK", { day: "numeric", month: "short" });
+}
+
+function getCurrentUserId(): string | null {
+  try {
+    const raw = localStorage.getItem("user");
+    if (raw) return JSON.parse(raw)?.id ?? null;
+    const token = localStorage.getItem("accessToken") ?? localStorage.getItem("token");
+    if (token) {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      return payload?.id ?? payload?.sub ?? null;
+    }
+  } catch { /* ignore */ }
+  return null;
+}
+
+function getCurrentUser(): { name: string; phone: string; initials: string } {
+  try {
+    const raw = localStorage.getItem("user");
+    if (raw) {
+      const u = JSON.parse(raw);
+      const name = u?.full_name ?? u?.name ?? "User";
+      return {
+        name,
+        phone: u?.phone ?? "",
+        initials: name.split(" ").map((s: string) => s[0]).join("").toUpperCase().slice(0, 2),
+      };
+    }
+    // fallback: decode JWT
+    const token = localStorage.getItem("accessToken") ?? localStorage.getItem("token");
+    if (token) {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      const name = payload?.full_name ?? payload?.name ?? "User";
+      return { name, phone: payload?.phone ?? "", initials: name.slice(0, 2).toUpperCase() };
+    }
+  } catch { /* ignore */ }
+  return { name: "User", phone: "", initials: "U" };
+}
+
+function normalize(raw: RawTransaction, currentUserId: string | null): NormalizedTxn {
+  const isSender = raw.sender.id === currentUserId;
+  const isSelf   = raw.sender.id === raw.receiver.id;
+  const type: "CREDIT" | "DEBIT" = (!isSelf && isSender) ? "DEBIT" : "CREDIT";
+  const counterparty = type === "DEBIT" ? raw.receiver : raw.sender;
+  return {
+    id:         raw.id,
+    name:       counterparty.full_name,
+    phone:      counterparty.phone,
+    type,
+    amount:     parseFloat(raw.amount),
+    status:     raw.status,
+    risk_score: raw.risk_score != null ? Math.round(parseFloat(raw.risk_score)) : 0,
+    time:       formatDate(raw.created_at),
+    note:       raw.note ?? "",
+    avatar:     avatarGradient(counterparty.full_name),
+    sender:     raw.sender,
+    receiver:   raw.receiver,
+  };
+}
+
+/* ─────────────────────────────────────────────────────────────
+   LOGO  (identical to SendMoney)
+───────────────────────────────────────────────────────────── */
 
 function LogoMark({ size = 32 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
-      <rect width="32" height="32" rx="9" fill="url(#dlh)"/>
-      <rect x="5" y="10" width="22" height="15" rx="3" fill="white" fillOpacity="0.2"/>
-      <rect x="5" y="10" width="22" height="15" rx="3" stroke="white" strokeOpacity="0.35" strokeWidth="1"/>
-      <rect x="8" y="14" width="5" height="4" rx="1" fill="white" fillOpacity="0.8"/>
-      <circle cx="23" cy="9" r="5" fill="#10B981"/>
-      <path d="M20.5 9l2 2 3-3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <rect width="32" height="32" rx="9" fill="url(#hsl)" />
+      <rect x="5" y="10" width="22" height="15" rx="3" fill="white" fillOpacity="0.2" />
+      <rect x="5" y="10" width="22" height="15" rx="3" stroke="white" strokeOpacity="0.35" strokeWidth="1" />
+      <rect x="8" y="14" width="5" height="4" rx="1" fill="white" fillOpacity="0.8" />
+      <path d="M18 14.5 Q20 16 18 17.5" stroke="white" strokeOpacity="0.65" strokeWidth="1.1" strokeLinecap="round" fill="none" />
+      <path d="M20 13.5 Q23 16 20 18.5" stroke="white" strokeOpacity="0.4" strokeWidth="1.1" strokeLinecap="round" fill="none" />
+      <circle cx="9"  cy="21" r="1.2" fill="white" fillOpacity="0.7" />
+      <circle cx="13" cy="21" r="1.2" fill="white" fillOpacity="0.45" />
+      <circle cx="23" cy="9"  r="5"   fill="#10B981" />
+      <path d="M20.5 9l2 2 3-3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
       <defs>
-        <linearGradient id="dlh" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#2563EB"/><stop offset="1" stopColor="#4F46E5"/>
+        <linearGradient id="hsl" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#2563EB" /><stop offset="1" stopColor="#4F46E5" />
         </linearGradient>
       </defs>
     </svg>
   );
 }
 
-/* ── Risk badge ── */
+/* ─────────────────────────────────────────────────────────────
+   RISK BADGE
+───────────────────────────────────────────────────────────── */
+
 function RiskBadge({ score }: { score: number }) {
   if (score <= 30) return (
     <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold text-emerald-700">
@@ -65,21 +212,19 @@ function RiskBadge({ score }: { score: number }) {
   );
 }
 
-/* ── Detail drawer ── */
-function TxnDrawer({ txn, onClose }: { txn: typeof TRANSACTIONS[0] | null; onClose: () => void }) {
+/* ─────────────────────────────────────────────────────────────
+   TRANSACTION DRAWER
+───────────────────────────────────────────────────────────── */
+
+function TxnDrawer({ txn, onClose }: { txn: NormalizedTxn | null; onClose: () => void }) {
   if (!txn) return null;
   const isCredit  = txn.type === "CREDIT";
   const isBlocked = txn.status === "BLOCKED";
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      {/* backdrop */}
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose} />
-
-      {/* drawer */}
       <div className="relative flex h-full w-full max-w-sm flex-col bg-white shadow-2xl">
-
-        {/* header */}
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
           <p className="text-sm font-bold text-slate-900">Transaction Detail</p>
           <button
@@ -91,35 +236,26 @@ function TxnDrawer({ txn, onClose }: { txn: typeof TRANSACTIONS[0] | null; onClo
         </div>
 
         <div className="flex-1 overflow-y-auto p-5">
-
-          {/* status hero */}
-          <div className={`mb-5 rounded-2xl p-5 text-center
-            ${isBlocked
-              ? "bg-rose-50 border border-rose-100"
-              : "bg-emerald-50 border border-emerald-100"}`}
-          >
+          <div className={`mb-5 rounded-2xl p-5 text-center ${isBlocked ? "bg-rose-50 border border-rose-100" : "bg-emerald-50 border border-emerald-100"}`}>
             {isBlocked
               ? <XCircle className="mx-auto h-10 w-10 text-rose-500 mb-2" />
               : <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-500 mb-2" />
             }
             <p className={`text-2xl font-black ${isBlocked ? "text-rose-600" : isCredit ? "text-emerald-700" : "text-slate-800"}`}>
-              {isCredit ? "+" : "-"}Rs. {txn.amount.toLocaleString()}
+              {isCredit ? "+" : "−"}Rs. {txn.amount.toLocaleString()}
             </p>
-            <span className={`mt-1 inline-block rounded-full px-3 py-0.5 text-[10px] font-bold uppercase
-              ${isBlocked ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-700"}`}
-            >
+            <span className={`mt-1 inline-block rounded-full px-3 py-0.5 text-[10px] font-bold uppercase ${isBlocked ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-700"}`}>
               {txn.status}
             </span>
           </div>
 
-          {/* detail rows */}
           {[
-            { label: "Transaction ID", value: txn.id,      mono: true  },
-            { label: "Type",           value: txn.type,    mono: false },
-            { label: "Note",           value: txn.note,    mono: false },
-            { label: "Time",           value: txn.time,    mono: false },
-            { label: txn.type === "CREDIT" ? "From" : "To", value: txn.name, mono: false },
-            { label: "Phone",          value: txn.phone,   mono: true  },
+            { label: "Transaction ID", value: txn.id,                                          mono: true  },
+            { label: "Type",           value: txn.type,                                        mono: false },
+            { label: "Note",           value: txn.note || "—",                                 mono: false },
+            { label: "Time",           value: txn.time,                                        mono: false },
+            { label: txn.type === "CREDIT" ? "From" : "To", value: txn.name,                  mono: false },
+            { label: "Phone",          value: txn.phone,                                       mono: true  },
           ].map(({ label, value, mono }) => (
             <div key={label} className="flex items-center justify-between py-3 border-b border-slate-50">
               <p className="text-[11px] font-medium text-slate-400">{label}</p>
@@ -127,13 +263,11 @@ function TxnDrawer({ txn, onClose }: { txn: typeof TRANSACTIONS[0] | null; onClo
             </div>
           ))}
 
-          {/* risk score */}
           <div className="flex items-center justify-between py-3 border-b border-slate-50">
             <p className="text-[11px] font-medium text-slate-400">AI Risk Score</p>
             <RiskBadge score={txn.risk_score} />
           </div>
 
-          {/* risk bar */}
           <div className="mt-4">
             <div className="flex items-center justify-between mb-1.5">
               <p className="text-[11px] text-slate-400">Risk Level</p>
@@ -142,9 +276,7 @@ function TxnDrawer({ txn, onClose }: { txn: typeof TRANSACTIONS[0] | null; onClo
             <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all ${
-                  txn.risk_score <= 30 ? "bg-emerald-500"
-                  : txn.risk_score <= 69 ? "bg-amber-500"
-                  : "bg-rose-500"
+                  txn.risk_score <= 30 ? "bg-emerald-500" : txn.risk_score <= 69 ? "bg-amber-500" : "bg-rose-500"
                 }`}
                 style={{ width: `${txn.risk_score}%` }}
               />
@@ -163,14 +295,13 @@ function TxnDrawer({ txn, onClose }: { txn: typeof TRANSACTIONS[0] | null; onClo
                 <p className="text-xs font-bold text-rose-800">Blocked by AI Fraud Detection</p>
               </div>
               <p className="text-[11px] text-rose-600 leading-relaxed">
-                This transaction was automatically blocked because our AI detected suspicious activity patterns.
-                No money was deducted from your wallet.
+                This transaction was automatically blocked because our AI detected suspicious
+                activity patterns. No money was deducted from your wallet.
               </p>
             </div>
           )}
         </div>
 
-        {/* drawer footer */}
         <div className="border-t border-slate-100 p-4 flex gap-2">
           <Button
             variant="outline"
@@ -180,7 +311,7 @@ function TxnDrawer({ txn, onClose }: { txn: typeof TRANSACTIONS[0] | null; onClo
             Close
           </Button>
           {!isBlocked && (
-            <Button className="flex-1 h-10 rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 text-white text-sm font-bold shadow-md shadow-blue-600/20">
+            <Button className="flex-1 h-10 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-bold shadow-md shadow-blue-600/20">
               <Download className="mr-1.5 h-4 w-4" /> Receipt
             </Button>
           )}
@@ -190,347 +321,511 @@ function TxnDrawer({ txn, onClose }: { txn: typeof TRANSACTIONS[0] | null; onClo
   );
 }
 
-/* ══════════════════════════════════════════
-   HISTORY PAGE
-══════════════════════════════════════════ */
-export function HistoryPage() {
-  const [search,        setSearch]        = useState("");
-  const [statusFilter,  setStatusFilter]  = useState("All");
-  const [typeFilter,    setTypeFilter]    = useState("All");
-  const [selectedTxn,   setSelectedTxn]   = useState<typeof TRANSACTIONS[0] | null>(null);
-  const [page,          setPage]          = useState(1);
-  const [showFilters,   setShowFilters]   = useState(false);
-  const PER_PAGE = 7;
+/* ─────────────────────────────────────────────────────────────
+   MAIN PAGE
+───────────────────────────────────────────────────────────── */
 
-  // Filter
-  const filtered = TRANSACTIONS.filter(txn => {
-    const matchStatus =
-      statusFilter === "All" ||
-      (statusFilter === "Approved" && txn.status === "APPROVED") ||
-      (statusFilter === "Blocked"  && txn.status === "BLOCKED");
-    const matchType =
-      typeFilter === "All" ||
-      (typeFilter === "Sent"     && txn.type === "DEBIT")  ||
-      (typeFilter === "Received" && txn.type === "CREDIT");
-    const matchSearch =
-      txn.name.toLowerCase().includes(search.toLowerCase())  ||
-      txn.note.toLowerCase().includes(search.toLowerCase())  ||
-      txn.id.toLowerCase().includes(search.toLowerCase())    ||
-      txn.phone.includes(search);
-    return matchStatus && matchType && matchSearch;
+export function HistoryPage() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  /* ── data state ── */
+  const [transactions, setTransactions] = useState<NormalizedTxn[]>([]);
+  const [pagination,   setPagination]   = useState<Pagination>({ total: 0, page: 1, limit: PER_PAGE, pages: 1 });
+  const [loading,      setLoading]      = useState(true);
+  const [error,        setError]        = useState<string | null>(null);
+  const [stats,        setStats]        = useState({ sent: 0, received: 0, blocked: 0, total: 0 });
+
+  /* ── filter / ui state ── */
+  const [search,       setSearch]       = useState("");
+  const [statusFilter, setStatusFilter] = useState<typeof STATUS_FILTERS[number]>("All");
+  const [typeFilter,   setTypeFilter]   = useState<typeof TYPE_FILTERS[number]>("All");
+  const [selectedTxn,  setSelectedTxn]  = useState<NormalizedTxn | null>(null);
+  const [page,         setPage]         = useState(1);
+  const [showFilters,  setShowFilters]  = useState(false);
+
+  const currentUser = getCurrentUser();
+
+  /* ── fetch history via walletApi ── */
+  const fetchHistory = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params: Record<string, string> = {
+        page:  String(page),
+        limit: String(PER_PAGE),
+      };
+      if (statusFilter !== "All") params.status = statusFilter.toUpperCase();
+      if (typeFilter   !== "All") params.type   = typeFilter.toUpperCase();
+
+      const res: any = await walletApi.getHistory(params);
+      const currentUserId = getCurrentUserId();
+      const raw: RawTransaction[] = res.data?.data?.transactions ?? [];
+      setTransactions(raw.map(t => normalize(t, currentUserId)));
+      setPagination(res.data?.data?.pagination ?? { total: 0, page: 1, limit: PER_PAGE, pages: 1 });
+    } catch (e: any) {
+      setError(e?.response?.data?.message ?? e?.message ?? "Failed to load transactions.");
+    } finally {
+      setLoading(false);
+    }
+  }, [page, statusFilter, typeFilter]);
+
+  /* ── fetch stats via walletApi ── */
+  const fetchStats = useCallback(async () => {
+    try {
+      const res: any = await walletApi.getStats();
+      const d = res.data?.data ?? {};
+      setStats({
+        sent:     parseFloat(d.total_sent     ?? 0),
+        received: parseFloat(d.total_received ?? 0),
+        blocked:  parseFloat(d.total_blocked  ?? 0),
+        total:    d.total_transactions ?? 0,
+      });
+    } catch { /* stats are non-critical */ }
+  }, []);
+
+  useEffect(() => { fetchHistory(); }, [fetchHistory]);
+  useEffect(() => { fetchStats();   }, [fetchStats]);
+
+  /* ── filter helpers ── */
+  const applyStatusFilter = (f: typeof STATUS_FILTERS[number]) => { setStatusFilter(f); setPage(1); };
+  const applyTypeFilter   = (f: typeof TYPE_FILTERS[number])   => { setTypeFilter(f);   setPage(1); };
+  const clearFilters      = () => { setStatusFilter("All"); setTypeFilter("All"); setPage(1); };
+
+  /* ── client-side search on current page ── */
+  const filtered = transactions.filter(txn => {
+    const q = search.toLowerCase();
+    return (
+      txn.name.toLowerCase().includes(q) ||
+      txn.note.toLowerCase().includes(q) ||
+      txn.id.toLowerCase().includes(q)   ||
+      txn.phone.includes(search)
+    );
   });
 
-  const totalPages = Math.ceil(filtered.length / PER_PAGE);
-  const paginated  = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  const activeFilterCount = [statusFilter !== "All", typeFilter !== "All"].filter(Boolean).length;
 
-  // Summary stats
-  const totalSent     = TRANSACTIONS.filter(t => t.type === "DEBIT"   && t.status === "APPROVED").reduce((s, t) => s + t.amount, 0);
-  const totalReceived = TRANSACTIONS.filter(t => t.type === "CREDIT"  && t.status === "APPROVED").reduce((s, t) => s + t.amount, 0);
-  const totalBlocked  = TRANSACTIONS.filter(t => t.status === "BLOCKED").length;
+  /* ── CSV export ── */
+  const handleExportCSV = () => {
+    const rows = [
+      ["Date", "ID", "Name", "Phone", "Type", "Amount", "Status", "Risk Score", "Note"],
+      ...filtered.map(t => [t.time, t.id, t.name, t.phone, t.type, t.amount, t.status, t.risk_score, t.note]),
+    ];
+    const csv  = rows.map(r => r.map(v => `"${v}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url; a.download = "transactions.csv"; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  /* ─────────────────────────────
+     RENDER
+  ───────────────────────────── */
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 font-sans">
 
-      {/* ── sidebar ── */}
-      <aside className="hidden md:flex w-64 flex-col bg-white border-r border-slate-100 shadow-sm">
+      {/* Mobile sidebar backdrop */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-20 bg-slate-900/40 backdrop-blur-sm md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* ── Sidebar (identical structure to SendMoney) ── */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-30 flex w-64 flex-col bg-white border-r border-slate-100 shadow-sm transition-transform duration-300 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } md:relative md:translate-x-0`}
+      >
         <div className="flex h-16 items-center gap-3 border-b border-slate-100 px-5">
           <LogoMark size={34} />
           <div className="leading-none">
-            <p className="text-[16px] font-bold text-slate-900">Safe<span className="text-blue-600">Pay</span></p>
-            <p className="text-[10px] font-medium uppercase tracking-widest text-slate-400">Pakistan</p>
+            <p className="text-[16px] font-bold text-slate-900">
+              Safe<span className="text-blue-600">Pay</span>
+            </p>
+            <p className="text-[10px] font-medium uppercase tracking-widest text-slate-400">
+              Pakistan
+            </p>
           </div>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="ml-auto text-slate-400 md:hidden"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
-        <nav className="flex-1 px-3 py-4 space-y-0.5">
-          {[
-            { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
-            { label: "Send Money", to: "/sendMoney", icon: Send },
-            { label: "Wallet", to: "/wallet", icon: Wallet,  },
-            { label: "History", to: "/history", icon: CreditCard, active: true },
-            { label: "Notifications", to: "/notification", icon: Bell },
-            { label: "Profile", to: "/profile", icon: User },
-            { label: "Settings", to: "/settings", icon: Settings },
-          ].map(({ label, to, icon: Icon, active }) => (
-            <Link key={label} to={to}
-              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all
-                ${active
-                  ? "bg-linear-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/25"
-                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
+          {NAV.map(({ icon: Icon, label, to }) => {
+            const active = label === "History";
+            return (
+              <Link
+                key={label}
+                to={to}
+                className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+                  active
+                    ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/25"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                 }`}
-            >
-              <Icon className="h-4 w-4 shrink-0" />
-              {label}
-            </Link>
-          ))}
+              >
+                <Icon
+                  className={`h-4 w-4 shrink-0 ${
+                    active ? "text-white" : "text-slate-400 group-hover:text-slate-600"
+                  }`}
+                />
+                {label}
+              </Link>
+            );
+          })}
         </nav>
+
         <div className="border-t border-slate-100 p-4">
           <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-linear-to-br from-blue-500 to-indigo-600 text-xs font-bold text-white">WA</div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-slate-800">Waseem Akram</p>
-              <p className="truncate text-[11px] text-slate-500">+92 343 1077698</p>
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-bold text-white shadow-sm">
+              {currentUser.initials}
             </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-slate-800">{currentUser.name}</p>
+              <p className="truncate text-[11px] text-slate-500">{currentUser.phone}</p>
+            </div>
+            <button className="text-slate-400 hover:text-rose-500 transition-colors">
+              <LogOut className="h-4 w-4" />
+            </button>
           </div>
         </div>
       </aside>
 
-      {/* ── main ── */}
+      {/* ── Main ── */}
       <div className="flex flex-1 flex-col overflow-hidden">
 
-        {/* topbar */}
+        {/* Header */}
         <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-100 bg-white px-5 shadow-sm">
-          <div>
-            <h1 className="text-base font-bold text-slate-900">Transaction History</h1>
-            <p className="text-[11px] text-slate-400">{filtered.length} transactions found</p>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 md:hidden"
+            >
+              <Menu className="h-4 w-4" />
+            </button>
+            <Link
+              to="/dashboard"
+              className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" /> Dashboard
+            </Link>
           </div>
-          <button className="flex h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
-            <Download className="h-3.5 w-3.5" /> Export CSV
-          </button>
+
+          <div className="flex items-center gap-2">
+            {/* AI badge — same as SendMoney */}
+            <div className="hidden items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 sm:flex">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+              </span>
+              <span className="text-[11px] font-semibold text-emerald-700">AI protection active</span>
+            </div>
+
+            <button
+              onClick={handleExportCSV}
+              disabled={loading || filtered.length === 0}
+              className="hidden sm:flex h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Download className="h-3.5 w-3.5" /> Export CSV
+            </button>
+
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-bold text-white shadow-sm">
+              {currentUser.initials}
+            </div>
+          </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-5 md:p-7">
+        {/* Main content */}
+        <main className="flex-1 overflow-y-auto p-5 md:p-8">
+          <div className="mx-auto max-w-5xl">
 
-          {/* ── summary stats ── */}
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 mb-5">
-            {[
-              { label: "Total Transactions", value: TRANSACTIONS.length,              color: "text-blue-600",    bg: "bg-blue-50",    border: "border-blue-100",    icon: CreditCard   },
-              { label: "Total Sent",         value: `Rs. ${totalSent.toLocaleString()}`,      color: "text-rose-600",    bg: "bg-rose-50",    border: "border-rose-100",    icon: TrendingDown },
-              { label: "Total Received",     value: `Rs. ${totalReceived.toLocaleString()}`,  color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100", icon: TrendingUp   },
-              { label: "Blocked",            value: `${totalBlocked} txns`,           color: "text-amber-600",   bg: "bg-amber-50",   border: "border-amber-100",   icon: Shield       },
-            ].map(({ label, value, color, bg, border, icon: Icon }) => (
-              <div key={label} className={`rounded-2xl border ${border} ${bg} p-4`}>
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white shadow-sm mb-2">
-                  <Icon className={`h-4 w-4 ${color}`} />
+            {/* Page title */}
+            <div className="mb-6">
+              <h1 className="text-xl font-bold text-slate-900">Transaction History</h1>
+              <p className="text-sm text-slate-500">
+                {loading ? "Loading…" : `${pagination.total} transactions total`}
+              </p>
+            </div>
+
+            {/* ── Summary stats ── */}
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4 mb-6">
+              {[
+                { label: "Total Transactions", value: stats.total,                              color: "text-blue-600",    bg: "bg-blue-50",    border: "border-blue-100",    icon: CreditCard   },
+                { label: "Total Sent",         value: `Rs. ${stats.sent.toLocaleString()}`,     color: "text-rose-600",    bg: "bg-rose-50",    border: "border-rose-100",    icon: TrendingDown },
+                { label: "Total Received",     value: `Rs. ${stats.received.toLocaleString()}`, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100", icon: TrendingUp   },
+                { label: "Blocked Amount",     value: `Rs. ${stats.blocked.toLocaleString()}`,  color: "text-amber-600",   bg: "bg-amber-50",   border: "border-amber-100",   icon: Shield       },
+              ].map(({ label, value, color, bg, border, icon: Icon }) => (
+                <div key={label} className={`rounded-2xl border ${border} ${bg} p-4`}>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white shadow-sm mb-2">
+                    <Icon className={`h-4 w-4 ${color}`} />
+                  </div>
+                  <p className="text-[11px] font-medium text-slate-500">{label}</p>
+                  <p className={`text-base font-black ${color} mt-0.5`}>{value}</p>
                 </div>
-                <p className="text-[11px] font-medium text-slate-500">{label}</p>
-                <p className={`text-base font-black ${color} mt-0.5`}>{value}</p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
 
-          {/* ── table card ── */}
-          <div className="rounded-2xl border border-slate-100 bg-white shadow-sm">
+            {/* ── Table card ── */}
+            <div className="rounded-2xl border border-slate-100 bg-white shadow-sm">
 
-            {/* search + filters */}
-            <div className="border-b border-slate-100 px-5 py-4">
-              <div className="flex gap-2">
-                {/* search */}
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
-                  <input
-                    value={search}
-                    onChange={e => { setSearch(e.target.value); setPage(1); }}
-                    placeholder="Search by name, note, ID or phone…"
-                    className="h-9 w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                  />
-                  {search && (
-                    <button
-                      onClick={() => setSearch("")}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                </div>
+              {/* Search + filters toolbar */}
+              <div className="border-b border-slate-100 px-5 py-4">
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                    <input
+                      value={search}
+                      onChange={e => setSearch(e.target.value)}
+                      placeholder="Search by name, note, ID or phone…"
+                      className="h-9 w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                    />
+                    {search && (
+                      <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
 
-                {/* filter toggle */}
-                <button
-                  onClick={() => setShowFilters(v => !v)}
-                  className={`flex h-9 items-center gap-2 rounded-xl border px-3 text-xs font-semibold transition-all
-                    ${showFilters
-                      ? "border-blue-600 bg-blue-600 text-white"
-                      : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100"
+                  <button
+                    onClick={() => setShowFilters(v => !v)}
+                    className={`flex h-9 items-center gap-2 rounded-xl border px-3 text-xs font-semibold transition-all ${
+                      showFilters
+                        ? "border-blue-600 bg-blue-600 text-white"
+                        : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100"
                     }`}
-                >
-                  <SlidersHorizontal className="h-3.5 w-3.5" />
-                  Filters
-                  {(statusFilter !== "All" || typeFilter !== "All") && (
-                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white text-[9px] font-bold text-blue-600">
-                      {[statusFilter !== "All", typeFilter !== "All"].filter(Boolean).length}
-                    </span>
-                  )}
-                </button>
+                  >
+                    <SlidersHorizontal className="h-3.5 w-3.5" />
+                    Filters
+                    {activeFilterCount > 0 && (
+                      <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white text-[9px] font-bold text-blue-600">
+                        {activeFilterCount}
+                      </span>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={fetchHistory}
+                    disabled={loading}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 transition-colors disabled:opacity-40"
+                    title="Refresh"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+                  </button>
+
+                  {/* Mobile export */}
+                  <button
+                    onClick={handleExportCSV}
+                    disabled={loading || filtered.length === 0}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 transition-colors disabled:opacity-40 sm:hidden"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+
+                {showFilters && (
+                  <div className="mt-3 flex flex-wrap gap-4 pt-3 border-t border-slate-100">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1.5">Status</p>
+                      <div className="flex gap-1.5">
+                        {STATUS_FILTERS.map(f => (
+                          <button key={f} onClick={() => applyStatusFilter(f)}
+                            className={`h-7 rounded-lg px-3 text-[11px] font-semibold transition-all ${
+                              statusFilter === f
+                                ? "bg-blue-600 text-white shadow-sm"
+                                : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                            }`}
+                          >
+                            {f}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1.5">Direction</p>
+                      <div className="flex gap-1.5">
+                        {TYPE_FILTERS.map(f => (
+                          <button key={f} onClick={() => applyTypeFilter(f)}
+                            className={`h-7 rounded-lg px-3 text-[11px] font-semibold transition-all ${
+                              typeFilter === f
+                                ? "bg-blue-600 text-white shadow-sm"
+                                : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                            }`}
+                          >
+                            {f}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    {activeFilterCount > 0 && (
+                      <button onClick={clearFilters} className="ml-auto flex items-center gap-1 text-[11px] font-semibold text-rose-500 hover:text-rose-700 transition-colors self-end">
+                        <X className="h-3 w-3" /> Clear filters
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
 
-              {/* expanded filters */}
-              {showFilters && (
-                <div className="mt-3 flex flex-wrap gap-4 pt-3 border-t border-slate-100">
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1.5">Status</p>
-                    <div className="flex gap-1.5">
-                      {STATUS_FILTERS.map(f => (
-                        <button
-                          key={f}
-                          onClick={() => { setStatusFilter(f); setPage(1); }}
-                          className={`h-7 rounded-lg px-3 text-[11px] font-semibold transition-all
-                            ${statusFilter === f
-                              ? "bg-blue-600 text-white shadow-sm"
-                              : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                            }`}
-                        >
-                          {f}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1.5">Direction</p>
-                    <div className="flex gap-1.5">
-                      {TYPE_FILTERS.map(f => (
-                        <button
-                          key={f}
-                          onClick={() => { setTypeFilter(f); setPage(1); }}
-                          className={`h-7 rounded-lg px-3 text-[11px] font-semibold transition-all
-                            ${typeFilter === f
-                              ? "bg-blue-600 text-white shadow-sm"
-                              : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                            }`}
-                        >
-                          {f}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  {(statusFilter !== "All" || typeFilter !== "All") && (
+              {/* Table header — desktop only */}
+              <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-4 border-b border-slate-100 bg-slate-50/60 px-5 py-2.5">
+                {["Contact", "Amount", "Type", "Risk Score", "Time", ""].map(h => (
+                  <p key={h} className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">{h}</p>
+                ))}
+              </div>
+
+              {/* Rows */}
+              <ul className="divide-y divide-slate-50">
+                {loading ? (
+                  <li className="flex flex-col items-center justify-center py-16 text-slate-400">
+                    <Loader2 className="h-7 w-7 mb-3 animate-spin text-blue-500" />
+                    <p className="text-sm font-medium text-slate-500">Loading transactions…</p>
+                  </li>
+                ) : error ? (
+                  <li className="flex flex-col items-center justify-center py-16 gap-3">
+                    <AlertCircle className="h-8 w-8 text-rose-400" />
+                    <p className="text-sm font-medium text-slate-600">{error}</p>
                     <button
-                      onClick={() => { setStatusFilter("All"); setTypeFilter("All"); setPage(1); }}
-                      className="ml-auto flex items-center gap-1 text-[11px] font-semibold text-rose-500 hover:text-rose-700 transition-colors self-end"
+                      onClick={fetchHistory}
+                      className="flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 transition-colors"
                     >
-                      <X className="h-3 w-3" /> Clear filters
+                      <RefreshCw className="h-3.5 w-3.5" /> Retry
                     </button>
-                  )}
+                  </li>
+                ) : filtered.length === 0 ? (
+                  <li className="flex flex-col items-center justify-center py-16 text-slate-400">
+                    <CreditCard className="h-8 w-8 mb-2 opacity-30" />
+                    <p className="text-sm font-medium">No transactions found</p>
+                    <p className="text-[11px] mt-1">Try adjusting your filters</p>
+                  </li>
+                ) : filtered.map(txn => {
+                  const isCredit  = txn.type === "CREDIT";
+                  const isBlocked = txn.status === "BLOCKED";
+
+                  return (
+                    <li
+                      key={txn.id}
+                      onClick={() => setSelectedTxn(txn)}
+                      className="group grid grid-cols-1 gap-2 px-5 py-3.5 transition-colors hover:bg-slate-50 cursor-pointer md:grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] md:items-center md:gap-4"
+                    >
+                      {/* Contact */}
+                      <div className="flex items-center gap-3">
+                        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${txn.avatar} text-[10px] font-bold text-white shadow-sm`}>
+                          {initials(txn.name)}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-sm font-semibold text-slate-800 truncate">{txn.name}</p>
+                            {isBlocked && (
+                              <span className="rounded-full bg-rose-100 px-1.5 py-0.5 text-[8px] font-bold uppercase text-rose-600">Blocked</span>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-slate-400 font-mono truncate">{txn.id}</p>
+                        </div>
+                      </div>
+
+                      {/* Amount */}
+                      <div>
+                        <p className={`text-sm font-bold ${isBlocked ? "text-rose-500 line-through" : isCredit ? "text-emerald-600" : "text-slate-800"}`}>
+                          {isCredit ? "+" : "−"}Rs. {txn.amount.toLocaleString()}
+                        </p>
+                        {txn.note && <p className="text-[10px] text-slate-400 truncate">{txn.note}</p>}
+                      </div>
+
+                      {/* Type */}
+                      <div className="flex items-center gap-1.5">
+                        {isCredit
+                          ? <ArrowDownLeft className="h-3.5 w-3.5 text-emerald-500" />
+                          : <ArrowUpRight  className={`h-3.5 w-3.5 ${isBlocked ? "text-rose-400" : "text-slate-400"}`} />
+                        }
+                        <span className="text-[11px] font-semibold text-slate-600">
+                          {isCredit ? "Received" : isBlocked ? "Blocked" : "Sent"}
+                        </span>
+                      </div>
+
+                      {/* Risk */}
+                      <div><RiskBadge score={txn.risk_score} /></div>
+
+                      {/* Time */}
+                      <div className="flex items-center gap-1 text-[11px] text-slate-400">
+                        <Clock className="h-3 w-3 shrink-0" />
+                        {txn.time}
+                      </div>
+
+                      {/* Action */}
+                      <button
+                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-slate-400 opacity-0 transition-all group-hover:opacity-100 hover:border-blue-300 hover:text-blue-600"
+                        onClick={e => { e.stopPropagation(); setSelectedTxn(txn); }}
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              {/* Pagination */}
+              {!loading && !error && pagination.pages > 1 && (
+                <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3">
+                  <p className="text-[11px] text-slate-400">
+                    Page {pagination.page} of {pagination.pages} · {pagination.total} total
+                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+
+                    {Array.from({ length: pagination.pages }, (_, i) => i + 1)
+                      .filter(p => p === 1 || p === pagination.pages || Math.abs(p - page) <= 1)
+                      .reduce<(number | "…")[]>((acc, p, i, arr) => {
+                        if (i > 0 && (p as number) - (arr[i - 1] as number) > 1) acc.push("…");
+                        acc.push(p);
+                        return acc;
+                      }, [])
+                      .map((p, i) =>
+                        p === "…" ? (
+                          <span key={`ellipsis-${i}`} className="px-1 text-xs text-slate-400">…</span>
+                        ) : (
+                          <button
+                            key={p}
+                            onClick={() => setPage(p as number)}
+                            className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs font-semibold transition-all ${
+                              page === p
+                                ? "bg-blue-600 text-white shadow-sm"
+                                : "border border-slate-200 text-slate-500 hover:bg-slate-50"
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        )
+                      )
+                    }
+
+                    <button
+                      onClick={() => setPage(p => Math.min(pagination.pages, p + 1))}
+                      disabled={page === pagination.pages}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
 
-            {/* table header */}
-            <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-4 border-b border-slate-100 bg-slate-50/60 px-5 py-2.5">
-              {["Contact", "Amount", "Type", "Risk Score", "Time", ""].map(h => (
-                <p key={h} className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">{h}</p>
-              ))}
-            </div>
-
-            {/* rows */}
-            <ul className="divide-y divide-slate-50">
-              {paginated.length === 0 ? (
-                <li className="flex flex-col items-center justify-center py-16 text-slate-400">
-                  <CreditCard className="h-8 w-8 mb-2 opacity-30" />
-                  <p className="text-sm font-medium">No transactions found</p>
-                  <p className="text-[11px] mt-1">Try adjusting your filters</p>
-                </li>
-              ) : paginated.map(txn => {
-                const isCredit  = txn.type === "CREDIT";
-                const isBlocked = txn.status === "BLOCKED";
-
-                return (
-                  <li
-                    key={txn.id}
-                    className="group grid grid-cols-1 gap-2 px-5 py-3.5 transition-colors hover:bg-slate-50 cursor-pointer md:grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] md:items-center md:gap-4"
-                    onClick={() => setSelectedTxn(txn)}
-                  >
-                    {/* contact */}
-                    <div className="flex items-center gap-3">
-                      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-linear-to-br ${txn.avatar} text-[10px] font-bold text-white shadow-sm`}>
-                        {txn.name.split(" ").map(s => s[0]).join("")}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <p className="text-sm font-semibold text-slate-800 truncate">{txn.name}</p>
-                          {isBlocked && (
-                            <span className="rounded-full bg-rose-100 px-1.5 py-0.5 text-[8px] font-bold uppercase text-rose-600">Blocked</span>
-                          )}
-                        </div>
-                        <p className="text-[10px] text-slate-400 font-mono">{txn.id}</p>
-                      </div>
-                    </div>
-
-                    {/* amount */}
-                    <div>
-                      <p className={`text-sm font-bold
-                        ${isBlocked  ? "text-rose-500 line-through"
-                          : isCredit ? "text-emerald-600"
-                          : "text-slate-800"}`}
-                      >
-                        {isCredit ? "+" : "-"}Rs. {txn.amount.toLocaleString()}
-                      </p>
-                      {txn.note && (
-                        <p className="text-[10px] text-slate-400 truncate">{txn.note}</p>
-                      )}
-                    </div>
-
-                    {/* type */}
-                    <div className="flex items-center gap-1.5">
-                      {isCredit
-                        ? <ArrowDownLeft className="h-3.5 w-3.5 text-emerald-500" />
-                        : <ArrowUpRight  className={`h-3.5 w-3.5 ${isBlocked ? "text-rose-400" : "text-slate-400"}`} />
-                      }
-                      <span className="text-[11px] font-semibold text-slate-600">
-                        {isCredit ? "Received" : isBlocked ? "Blocked" : "Sent"}
-                      </span>
-                    </div>
-
-                    {/* risk */}
-                    <div>
-                      <RiskBadge score={txn.risk_score} />
-                    </div>
-
-                    {/* time */}
-                    <div className="flex items-center gap-1 text-[11px] text-slate-400">
-                      <Clock className="h-3 w-3 shrink-0" />
-                      {txn.time}
-                    </div>
-
-                    {/* action */}
-                    <button
-                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-slate-400 opacity-0 transition-all group-hover:opacity-100 hover:border-blue-300 hover:text-blue-600"
-                      onClick={e => { e.stopPropagation(); setSelectedTxn(txn); }}
-                    >
-                      <Eye className="h-3.5 w-3.5" />
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-
-            {/* pagination */}
-            <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3">
-              <p className="text-[11px] text-slate-400">
-                Showing {Math.min((page - 1) * PER_PAGE + 1, filtered.length)}–{Math.min(page * PER_PAGE, filtered.length)} of {filtered.length}
-              </p>
-              <div className="flex items-center gap-1.5">
-                <button
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                  <button
-                    key={p}
-                    onClick={() => setPage(p)}
-                    className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs font-semibold transition-all
-                      ${page === p
-                        ? "bg-blue-600 text-white shadow-sm"
-                        : "border border-slate-200 text-slate-500 hover:bg-slate-50"
-                      }`}
-                  >
-                    {p}
-                  </button>
-                ))}
-                <button
-                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
           </div>
         </main>
       </div>
 
-      {/* ── detail drawer ── */}
+      {/* Transaction drawer */}
       {selectedTxn && (
         <TxnDrawer txn={selectedTxn} onClose={() => setSelectedTxn(null)} />
       )}

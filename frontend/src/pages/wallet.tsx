@@ -24,131 +24,27 @@ import {
   User,
   Settings,
   LayoutDashboard,
-//   Settings,
+  AlertCircle,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-/* ── fake data ── */
-const WALLET = {
-  balance: 45200,
-  currency: "PKR",
-  total_sent: 8950,
-  total_received: 15500,
-  total_blocked: 1200,
-  last_updated: "Just now",
-};
-
-const LOGS = [
-  {
-    id: 1,
-    type: "CREDIT",
-    amount: 15000,
-    balance_after: 45200,
-    from: "Sara Ali",
-    note: "Salary",
-    time: "Today, 1:12 PM",
-    txn_id: "TXN-A1B2C3D4",
-  },
-  {
-    id: 2,
-    type: "DEBIT",
-    amount: 2000,
-    balance_after: 30200,
-    from: "Ahmed Khan",
-    note: "Rent",
-    time: "Today, 2:45 PM",
-    txn_id: "TXN-B2C3D4E5",
-  },
-  {
-    id: 3,
-    type: "TOPUP",
-    amount: 10000,
-    balance_after: 32200,
-    from: "Top Up",
-    note: "Wallet top up",
-    time: "Yesterday, 9:00 AM",
-    txn_id: "TXN-C3D4E5F6",
-  },
-  {
-    id: 4,
-    type: "DEBIT",
-    amount: 750,
-    balance_after: 22200,
-    from: "Usman Tariq",
-    note: "Lunch",
-    time: "Yesterday, 1:20 PM",
-    txn_id: "TXN-D4E5F6G7",
-  },
-  {
-    id: 5,
-    type: "CREDIT",
-    amount: 500,
-    balance_after: 22950,
-    from: "Fatima H",
-    note: "Returned",
-    time: "Mon, 10:05 AM",
-    txn_id: "TXN-E5F6G7H8",
-  },
-  {
-    id: 6,
-    type: "DEBIT",
-    amount: 1200,
-    balance_after: 21750,
-    from: "Bilal Shah",
-    note: "Groceries",
-    time: "Mon, 11:30 AM",
-    txn_id: "TXN-F6G7H8I9",
-  },
-  {
-    id: 7,
-    type: "TOPUP",
-    amount: 20000,
-    balance_after: 41750,
-    from: "Top Up",
-    note: "Wallet top up",
-    time: "Sun, 3:00 PM",
-    txn_id: "TXN-G7H8I9J0",
-  },
-];
-
-const STATS = [
-  {
-    label: "Total Sent",
-    value: "Rs. 8,950",
-    icon: TrendingDown,
-    color: "text-rose-600",
-    bg: "bg-rose-50",
-    border: "border-rose-100",
-  },
-  {
-    label: "Total Received",
-    value: "Rs. 15,500",
-    icon: TrendingUp,
-    color: "text-emerald-600",
-    bg: "bg-emerald-50",
-    border: "border-emerald-100",
-  },
-  {
-    label: "Transactions",
-    value: "24",
-    icon: CreditCard,
-    color: "text-blue-600",
-    bg: "bg-blue-50",
-    border: "border-blue-100",
-  },
-  {
-    label: "Blocked",
-    value: "1",
-    icon: Shield,
-    color: "text-amber-600",
-    bg: "bg-amber-50",
-    border: "border-amber-100",
-  },
-];
+import {
+  useWallet,
+  useTopUp,
+  useWalletLogs,
+  useWalletStats,
+  useExportLogs,
+} from "@/hooks/useWallet";
 
 const FILTERS = ["All", "Credit", "Debit", "Top Up"];
 
-/* ── helpers ── */
+const FILTER_MAP: Record<string, string> = {
+  All: "ALL",
+  Credit: "CREDIT",
+  Debit: "DEBIT",
+  "Top Up": "TOPUP",
+};
+
 function LogIcon({ type }: { type: string }) {
   if (type === "CREDIT")
     return (
@@ -226,29 +122,144 @@ function LogoMark({ size = 32 }: { size?: number }) {
   );
 }
 
+function Skeleton({ className = "" }: { className?: string }) {
+  return <div className={`animate-pulse rounded bg-slate-200 ${className}`} />;
+}
+
 export function WalletPage() {
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [activeFilter, setActiveFilter] = useState("All");
   const [search, setSearch] = useState("");
   const [showTopUp, setShowTopUp] = useState(false);
   const [topUpAmount, setTopUpAmount] = useState("");
+  const [topUpError, setTopUpError] = useState("");
+  const [topUpSuccess, setTopUpSuccess] = useState(false);
+  const [globalError, setGlobalError] = useState("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const filtered = LOGS.filter((log) => {
-    const matchFilter =
-      activeFilter === "All" ||
-      (activeFilter === "Credit" && log.type === "CREDIT") ||
-      (activeFilter === "Debit" && log.type === "DEBIT") ||
-      (activeFilter === "Top Up" && log.type === "TOPUP");
-    const matchSearch =
-      log.from.toLowerCase().includes(search.toLowerCase()) ||
-      log.note.toLowerCase().includes(search.toLowerCase()) ||
-      log.txn_id.toLowerCase().includes(search.toLowerCase());
-    return matchFilter && matchSearch;
-  });
+  const {
+    data: wallet,
+    isLoading: loadingWallet,
+    refetch: refetchWallet,
+  } = useWallet();
+
+  const {
+    data: stats,
+    isLoading: loadingStats,
+    refetch: refetchStats,
+  } = useWalletStats();
+
+const logsParams = {
+  ...(FILTER_MAP[activeFilter] !== "ALL" ? { type: FILTER_MAP[activeFilter] } : {}),
+  ...(search ? { search } : {}),
+};
+  const {
+    data: logsData,
+    isLoading: loadingLogs,
+    isFetching: fetchingLogs,
+    refetch: refetchLogs,
+  } = useWalletLogs(logsParams);
+
+  const logs: any[] = Array.isArray(logsData)
+    ? logsData
+    : ((logsData as any)?.logs ?? []);
+
+  const topUpMutation = useTopUp();
+
+  const exportMutation = useExportLogs();
+
+  const displayBalance: number = (wallet as any)?.balance ?? 0;
+
+  const displayStats = [
+    {
+      label: "Total Sent",
+      value: stats ? `Rs. ${(stats as any).total_sent?.toLocaleString()}` : "—",
+      icon: TrendingDown,
+      color: "text-rose-600",
+      bg: "bg-rose-50",
+      border: "border-rose-100",
+    },
+    {
+      label: "Total Received",
+      value: stats
+        ? `Rs. ${(stats as any).total_received?.toLocaleString()}`
+        : "—",
+      icon: TrendingUp,
+      color: "text-emerald-600",
+      bg: "bg-emerald-50",
+      border: "border-emerald-100",
+    },
+    {
+      label: "Transactions",
+      value: stats ? String((stats as any).total_transactions) : "—",
+      icon: CreditCard,
+      color: "text-blue-600",
+      bg: "bg-blue-50",
+      border: "border-blue-100",
+    },
+    {
+      label: "Blocked",
+      value: stats ? String((stats as any).total_blocked) : "—",
+      icon: Shield,
+      color: "text-amber-600",
+      bg: "bg-amber-50",
+      border: "border-amber-100",
+    },
+  ];
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await Promise.all([refetchWallet(), refetchStats(), refetchLogs()]);
+    setIsRefreshing(false);
+  };
+
+  const handleExport = () => {
+    exportMutation.mutate(undefined, {
+      onError: (e: any) => setGlobalError(e?.message ?? "Export failed"),
+    });
+  };
+
+  const handleTopUp = () => {
+    const amount = Number(topUpAmount);
+    if (!amount || amount < 100) return;
+
+    setTopUpError("");
+    setTopUpSuccess(false);
+
+    topUpMutation.mutate(amount, {
+      onSuccess: () => {
+        setTopUpSuccess(true);
+        setTimeout(() => {
+          setShowTopUp(false);
+          setTopUpAmount("");
+          setTopUpSuccess(false);
+          topUpMutation.reset();
+        }, 1500);
+      },
+      onError: (e: any) => {
+        setTopUpError(
+          e?.response?.data?.message ??
+            e?.message ??
+            "Top-up failed. Please try again.",
+        );
+      },
+    });
+  };
+
+  const closeTopUp = () => {
+    setShowTopUp(false);
+    setTopUpAmount("");
+    setTopUpError("");
+    setTopUpSuccess(false);
+    topUpMutation.reset();
+  };
+
+  const topUpLoading = topUpMutation.isPending;
+  const exportLoading = exportMutation.isPending;
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 font-sans">
-      {/* ── sidebar (same as Dashboard) ── */}
+      {/* ── sidebar ── */}
       <aside className="hidden md:flex w-64 flex-col bg-white border-r border-slate-100 shadow-sm">
         <div className="flex h-16 items-center gap-3 border-b border-slate-100 px-5">
           <LogoMark size={34} />
@@ -314,19 +325,36 @@ export function WalletPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <button className="flex h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
-              <Download className="h-3.5 w-3.5" /> Export
-            </button>
             <button
-              onClick={() => setShowTopUp(true)}
-              className="flex h-9 items-center gap-2 rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 px-4 text-xs font-bold text-white shadow-md shadow-blue-600/20 hover:opacity-90 transition-opacity"
+              onClick={handleExport}
+              disabled={exportLoading}
+              className="flex h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50"
             >
-              <Plus className="h-3.5 w-3.5" /> Top Up
+              {exportLoading ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Download className="h-3.5 w-3.5" />
+              )}{" "}
+              Export
             </button>
           </div>
         </header>
 
         <main className="flex-1 overflow-y-auto p-5 md:p-7">
+          {/* Global error banner */}
+          {globalError && (
+            <div className="mb-4 flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
+              <AlertCircle className="h-4 w-4 shrink-0 text-rose-500" />
+              <p className="text-sm text-rose-700 font-medium">{globalError}</p>
+              <button
+                onClick={() => setGlobalError("")}
+                className="ml-auto text-rose-400 hover:text-rose-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+
           {/* ── balance hero ── */}
           <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-slate-900 via-blue-900 to-indigo-900 p-6 text-white shadow-xl shadow-blue-900/30 mb-5">
             <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/5" />
@@ -338,11 +366,15 @@ export function WalletPage() {
                     Wallet Balance
                   </p>
                   <div className="mt-2 flex items-center gap-3">
-                    <p className="text-4xl font-black tracking-tight">
-                      {balanceVisible
-                        ? `Rs. ${WALLET.balance.toLocaleString()}`
-                        : "Rs. ••••••"}
-                    </p>
+                    {loadingWallet ? (
+                      <Skeleton className="h-10 w-48 bg-white/20" />
+                    ) : (
+                      <p className="text-4xl font-black tracking-tight">
+                        {balanceVisible
+                          ? `Rs. ${displayBalance.toLocaleString()}`
+                          : "Rs. ••••••"}
+                      </p>
+                    )}
                     <button
                       onClick={() => setBalanceVisible((v) => !v)}
                       className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-blue-200 transition hover:bg-white/20"
@@ -357,16 +389,19 @@ export function WalletPage() {
                   <div className="mt-1 flex items-center gap-1.5">
                     <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                     <p className="text-[11px] text-blue-200">
-                      Updated {WALLET.last_updated}
+                      Updated {(wallet as any)?.last_updated ?? "—"}
                     </p>
                   </div>
                 </div>
                 <button
-                  onClick={() => {}}
-                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-blue-200 hover:bg-white/20 transition-colors"
+                  onClick={handleRefresh}
+                  disabled={isRefreshing}
+                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-blue-200 hover:bg-white/20 transition-colors disabled:opacity-50"
                   title="Refresh"
                 >
-                  <RefreshCw className="h-4 w-4" />
+                  <RefreshCw
+                    className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+                  />
                 </button>
               </div>
 
@@ -375,17 +410,23 @@ export function WalletPage() {
                 {[
                   {
                     label: "Sent",
-                    value: `Rs. ${WALLET.total_sent.toLocaleString()}`,
+                    value: stats
+                      ? `Rs. ${Number((stats as any).total_sent).toLocaleString()}`
+                      : "—",
                     color: "text-rose-300",
                   },
                   {
                     label: "Received",
-                    value: `Rs. ${WALLET.total_received.toLocaleString()}`,
+                    value: stats
+                      ? `Rs. ${Number((stats as any).total_received).toLocaleString()}`
+                      : "—",
                     color: "text-emerald-300",
                   },
                   {
                     label: "Blocked",
-                    value: `Rs. ${WALLET.total_blocked.toLocaleString()}`,
+                    value: stats
+                      ? `Rs. ${Number((stats as any).total_blocked).toLocaleString()}`
+                      : "—",
                     color: "text-amber-300",
                   },
                 ].map(({ label, value, color }) => (
@@ -394,9 +435,13 @@ export function WalletPage() {
                     className="rounded-xl bg-white/10 px-3 py-2.5 backdrop-blur"
                   >
                     <p className="text-[10px] text-blue-200">{label}</p>
-                    <p className={`mt-0.5 text-sm font-bold ${color}`}>
-                      {value}
-                    </p>
+                    {loadingWallet ? (
+                      <Skeleton className="mt-1 h-4 w-20 bg-white/20" />
+                    ) : (
+                      <p className={`mt-0.5 text-sm font-bold ${color}`}>
+                        {value}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -421,24 +466,28 @@ export function WalletPage() {
 
           {/* ── stats row ── */}
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4 mb-5">
-            {STATS.map(({ label, value, icon: Icon, color, bg, border }) => (
-              <div
-                key={label}
-                className={`rounded-2xl border ${border} ${bg} p-4`}
-              >
+            {displayStats.map(
+              ({ label, value, icon: Icon, color, bg, border }) => (
                 <div
-                  className={`flex h-8 w-8 items-center justify-center rounded-xl bg-white shadow-sm mb-2`}
+                  key={label}
+                  className={`rounded-2xl border ${border} ${bg} p-4`}
                 >
-                  <Icon className={`h-4 w-4 ${color}`} />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white shadow-sm mb-2">
+                    <Icon className={`h-4 w-4 ${color}`} />
+                  </div>
+                  <p className="text-[11px] font-medium text-slate-500">
+                    {label}
+                  </p>
+                  {loadingStats ? (
+                    <Skeleton className="mt-1 h-5 w-16" />
+                  ) : (
+                    <p className={`text-base font-black ${color} mt-0.5`}>
+                      {value}
+                    </p>
+                  )}
                 </div>
-                <p className="text-[11px] font-medium text-slate-500">
-                  {label}
-                </p>
-                <p className={`text-base font-black ${color} mt-0.5`}>
-                  {value}
-                </p>
-              </div>
-            ))}
+              ),
+            )}
           </div>
 
           {/* ── wallet logs ── */}
@@ -450,7 +499,7 @@ export function WalletPage() {
                   Wallet Audit Log
                 </p>
                 <p className="text-[11px] text-slate-400">
-                  {filtered.length} entries
+                  {loadingLogs ? "Loading…" : `${logs.length} entries`}
                 </p>
               </div>
               <Link
@@ -493,73 +542,90 @@ export function WalletPage() {
 
             {/* log list */}
             <ul className="divide-y divide-slate-50">
-              {filtered.length === 0 ? (
+              {loadingLogs ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <li key={i} className="flex items-center gap-3 px-5 py-3.5">
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-3.5 w-32" />
+                      <Skeleton className="h-3 w-48" />
+                    </div>
+                    <div className="space-y-2 text-right">
+                      <Skeleton className="h-3.5 w-20 ml-auto" />
+                      <Skeleton className="h-3 w-28 ml-auto" />
+                    </div>
+                  </li>
+                ))
+              ) : logs.length === 0 ? (
                 <li className="flex flex-col items-center justify-center py-12 text-slate-400">
                   <Wallet className="h-8 w-8 mb-2 opacity-30" />
-                  <p className="text-sm font-medium">No entries found</p>
+                  <p className="text-sm font-medium">
+                    {activeFilter === "All"
+                      ? "No transactions yet"
+                      : `No ${activeFilter} transactions found`}
+                  </p>
                 </li>
               ) : (
-                filtered.map((log) => (
+                logs.map((log: any) => (
                   <li
                     key={log.id}
                     className="group flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-slate-50"
                   >
                     <LogIcon type={log.type} />
-
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-semibold text-slate-800">
-                          {log.from}
+                          {log.type === "TOPUP"
+                            ? "Wallet Top Up"
+                            : log.type === "CREDIT"
+                              ? "Money Received"
+                              : "Money Sent"}
                         </p>
                         <span
                           className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase
-                        ${
-                          log.type === "CREDIT"
-                            ? "bg-emerald-100 text-emerald-700"
-                            : log.type === "TOPUP"
-                              ? "bg-blue-100 text-blue-700"
-                              : "bg-slate-100 text-slate-600"
-                        }`}
+      ${
+        log.type === "CREDIT"
+          ? "bg-emerald-100 text-emerald-700"
+          : log.type === "TOPUP"
+            ? "bg-blue-100 text-blue-700"
+            : "bg-slate-100 text-slate-600"
+      }`}
                         >
                           {log.type === "TOPUP" ? "Top Up" : log.type}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <p className="text-[11px] text-slate-400">{log.note}</p>
-                        <span className="text-slate-300">·</span>
-                        <p className="text-[11px] text-slate-400 font-mono">
-                          {log.txn_id}
-                        </p>
-                      </div>
+                      <p className="text-[11px] text-slate-400 font-mono truncate mt-0.5">
+                        {log.transaction_id ?? "—"}
+                      </p>
                     </div>
-
-                    {/* center — balance trail */}
                     <div className="hidden md:flex items-center gap-1.5 text-[11px] text-slate-400">
                       <Clock className="h-3 w-3" />
-                      {log.time}
+                      {new Date(log.created_at).toLocaleString("en-PK", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </div>
-
-                    {/* right — amount + balance after */}
                     <div className="text-right">
                       <p
-                        className={`text-sm font-bold
-                      ${
-                        log.type === "CREDIT" || log.type === "TOPUP"
-                          ? "text-emerald-600"
-                          : "text-slate-800"
-                      }`}
+                        className={`text-sm font-bold ${
+                          log.type === "CREDIT" || log.type === "TOPUP"
+                            ? "text-emerald-600"
+                            : "text-slate-800"
+                        }`}
                       >
                         {log.type === "CREDIT" || log.type === "TOPUP"
                           ? "+"
                           : "-"}
-                        Rs. {log.amount.toLocaleString()}
+                        Rs. {Number(log.amount).toLocaleString()}
                       </p>
                       <p className="text-[10px] text-slate-400 mt-0.5">
-                        Balance: Rs. {log.balance_after.toLocaleString()}
+                        Balance: Rs.{" "}
+                        {Number(log.balance_after).toLocaleString()}
                       </p>
                     </div>
-
-                    {/* status icon */}
                     {log.type === "CREDIT" || log.type === "TOPUP" ? (
                       <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
                     ) : (
@@ -573,7 +639,8 @@ export function WalletPage() {
             {/* footer */}
             <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3">
               <p className="text-[11px] text-slate-400">
-                Showing {filtered.length} of {LOGS.length} entries
+                Showing {logs.length} of{" "}
+                {(logsData as any)?.pagination?.total ?? logs.length} entries
               </p>
               <div className="flex items-center gap-1">
                 <Shield className="h-3 w-3 text-emerald-500" />
@@ -603,10 +670,7 @@ export function WalletPage() {
                 </p>
               </div>
               <button
-                onClick={() => {
-                  setShowTopUp(false);
-                  setTopUpAmount("");
-                }}
+                onClick={closeTopUp}
                 className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 text-slate-400 hover:bg-slate-50"
               >
                 <X className="h-4 w-4" />
@@ -620,7 +684,13 @@ export function WalletPage() {
                 <p className="text-[11px] text-slate-400 mb-1">
                   Current Balance
                 </p>
-                <p className="text-2xl font-black text-slate-900">Rs. 45,200</p>
+                {loadingWallet ? (
+                  <Skeleton className="mx-auto h-8 w-36" />
+                ) : (
+                  <p className="text-2xl font-black text-slate-900">
+                    Rs. {displayBalance.toLocaleString()}
+                  </p>
+                )}
               </div>
 
               {/* quick amounts */}
@@ -632,7 +702,8 @@ export function WalletPage() {
                   <button
                     key={amt}
                     onClick={() => setTopUpAmount(String(amt))}
-                    className={`rounded-xl border py-2 text-xs font-bold transition-all
+                    disabled={topUpLoading}
+                    className={`rounded-xl border py-2 text-xs font-bold transition-all disabled:opacity-50
                       ${
                         topUpAmount === String(amt)
                           ? "border-blue-600 bg-blue-600 text-white shadow-md shadow-blue-600/20"
@@ -655,11 +726,15 @@ export function WalletPage() {
                 <input
                   type="number"
                   value={topUpAmount}
-                  onChange={(e) => setTopUpAmount(e.target.value)}
+                  onChange={(e) => {
+                    setTopUpAmount(e.target.value);
+                    setTopUpError("");
+                  }}
                   placeholder="0"
                   min="100"
                   max="100000"
-                  className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-lg font-bold text-slate-900 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  disabled={topUpLoading}
+                  className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-lg font-bold text-slate-900 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50"
                 />
               </div>
 
@@ -671,14 +746,35 @@ export function WalletPage() {
                 </p>
               </div>
 
+              {/* error */}
+              {topUpError && (
+                <div className="mb-4 flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2.5">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-rose-500" />
+                  <p className="text-[11px] text-rose-700 font-medium">
+                    {topUpError}
+                  </p>
+                </div>
+              )}
+
+              {/* success */}
+              {topUpSuccess && (
+                <div className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5">
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
+                  <p className="text-[11px] text-emerald-700 font-medium">
+                    Top-up successful!
+                  </p>
+                </div>
+              )}
+
               {/* new balance preview */}
-              {topUpAmount && Number(topUpAmount) > 0 && (
+              {topUpAmount && Number(topUpAmount) > 0 && !topUpSuccess && (
                 <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-center">
                   <p className="text-[11px] text-emerald-600 mb-0.5">
                     New Balance After Top Up
                   </p>
                   <p className="text-xl font-black text-emerald-700">
-                    Rs. {(45200 + Number(topUpAmount)).toLocaleString()}
+                    Rs.{" "}
+                    {(displayBalance + Number(topUpAmount)).toLocaleString()}
                   </p>
                 </div>
               )}
@@ -687,19 +783,27 @@ export function WalletPage() {
               <div className="flex gap-2">
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    setShowTopUp(false);
-                    setTopUpAmount("");
-                  }}
+                  onClick={closeTopUp}
+                  disabled={topUpLoading}
                   className="flex-1 h-11 rounded-xl border-slate-200 text-slate-600 text-sm font-semibold"
                 >
                   Cancel
                 </Button>
                 <Button
-                  disabled={!topUpAmount || Number(topUpAmount) < 100}
+                  onClick={handleTopUp}
+                  disabled={
+                    !topUpAmount ||
+                    Number(topUpAmount) < 100 ||
+                    topUpLoading ||
+                    topUpSuccess
+                  }
                   className="flex-1 h-11 rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 text-white text-sm font-bold shadow-md shadow-blue-600/20 disabled:opacity-40"
                 >
-                  <Plus className="mr-1.5 h-4 w-4" />
+                  {topUpLoading ? (
+                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plus className="mr-1.5 h-4 w-4" />
+                  )}
                   Add Rs.{" "}
                   {topUpAmount ? Number(topUpAmount).toLocaleString() : "0"}
                 </Button>

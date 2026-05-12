@@ -159,7 +159,7 @@ export function ResetPasswordPage() {
     : "your phone";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center px-4 py-12 relative overflow-hidden">
+    <div className="min-h-screen bg-linear-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center px-4 py-12 relative overflow-hidden">
 
       {/* Decorative blobs */}
       <div className="pointer-events-none absolute -top-32 -left-32 h-80 w-80 rounded-full bg-blue-200/30 blur-3xl" />
@@ -214,7 +214,7 @@ export function ResetPasswordPage() {
               </div>
 
               <div className="text-center mb-7">
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-lg shadow-blue-500/25">
+                <div className="w-16 h-16 bg-linear-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-lg shadow-blue-500/25">
                   <Shield className="h-8 w-8 text-white" />
                 </div>
                 <h1 className="text-xl font-bold text-slate-900 mb-2">Enter the code</h1>

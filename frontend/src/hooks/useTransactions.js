@@ -2,9 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { transactionsApi } from "../api/endpoints/transactions.api";
 import { QUERY_KEYS } from "../api/queryKeys";
 
-// ─────────────────────────────────────────
-// GET single transaction
-// ─────────────────────────────────────────
+
 export const useTransaction = (id) => {
   return useQuery({
     queryKey: QUERY_KEYS.transaction(id),
@@ -16,9 +14,7 @@ export const useTransaction = (id) => {
   });
 };
 
-// ─────────────────────────────────────────
-// GET receipt
-// ─────────────────────────────────────────
+s
 export const useReceipt = (id) => {
   return useQuery({
     queryKey: QUERY_KEYS.receipt(id),
