@@ -3,11 +3,11 @@ import useAuthStore from "../store/auth.store";
 
 const api = axios.create({
   baseURL:        import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1",
-  withCredentials: true,   // sends HttpOnly refresh_token cookie automatically
+  withCredentials: true,   
   timeout:         10000,
 });
 
-// ── Request interceptor — attach access token ──────────────
+
 api.interceptors.request.use(
   (config) => {
     const token = useAuthStore.getState().getToken();
@@ -19,7 +19,7 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ── Response interceptor — silent token refresh ────────────
+
 let isRefreshing   = false;
 let failedQueue    = [];
 
@@ -36,20 +36,20 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Not a 401 or already retried → just reject
+   
     if (error.response?.status !== 401 || originalRequest._retry) {
       return Promise.reject(error);
     }
 
-    // Don't retry refresh endpoint itself
+    
     if (originalRequest.url === "/auth/refresh") {
       useAuthStore.getState().logout();
-      window.location.href = "/login";
+      window.location.href = "/sign-in";
       return Promise.reject(error);
     }
 
     if (isRefreshing) {
-      // Queue requests while refresh is in progress
+      
       return new Promise((resolve, reject) => {
         failedQueue.push({ resolve, reject });
       }).then((token) => {
@@ -62,7 +62,7 @@ api.interceptors.response.use(
     isRefreshing = true;
 
     try {
-      // Refresh token is in HttpOnly cookie — sent automatically
+     
       const { data } = await api.post("/auth/refresh");
       const newToken = data.data.access_token;
 
@@ -75,7 +75,7 @@ api.interceptors.response.use(
     } catch (refreshError) {
       processQueue(refreshError, null);
       useAuthStore.getState().logout();
-      window.location.href = "/login";
+      window.location.href = "/sign-in";
       return Promise.reject(refreshError);
 
     } finally {

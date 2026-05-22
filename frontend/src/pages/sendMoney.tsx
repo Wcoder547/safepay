@@ -2,19 +2,16 @@ import { useState, useEffect } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   ArrowLeft, ArrowRight, Check, ChevronRight,
-  CreditCard, LayoutDashboard, Lock, LogOut,
-  Search, Send, Settings, Shield, Wallet, X,
-  Menu, AlertTriangle, Loader2, Eye, EyeOff, User, Bell,
+  Lock, Search, Send, Shield, Wallet, X,
+  AlertTriangle, Loader2, Eye, EyeOff, User,
   WifiOff, CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AppLayout } from "@/components/AppLayout";
 import { useWallet, useSendMoney } from "@/hooks/useWallet";
 import { walletApi } from "@/api/endpoints/wallet.api";
 
-/* ─────────────────────────────────────────────────────────────
-   TYPES
-───────────────────────────────────────────────────────────── */
-type Step = "recipient" | "amount" | "pin" | "processing" | "result";
+type Step       = "recipient" | "amount" | "pin" | "processing" | "result";
 type ResultType = "approved" | "blocked";
 
 type Contact = {
@@ -23,47 +20,9 @@ type Contact = {
   avatar: string;
 };
 
-/* ─────────────────────────────────────────────────────────────
-   NAV
-───────────────────────────────────────────────────────────── */
-const NAV = [
-  { icon: LayoutDashboard, label: "Dashboard",     to: "/dashboard"    },
-  { icon: Send,            label: "Send Money",    to: "/sendMoney"    },
-  { icon: Wallet,          label: "Wallet",        to: "/wallet"       },
-  { icon: CreditCard,      label: "History",       to: "/history"      },
-  { icon: Bell,            label: "Notifications", to: "/notification" },
-  { icon: User,            label: "Profile",       to: "/profile"      },
-  { icon: Settings,        label: "Settings",      to: "/settings"     },
-];
 
-/* ─────────────────────────────────────────────────────────────
-   LOGO
-───────────────────────────────────────────────────────────── */
-function LogoMark({ size = 32 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
-      <rect width="32" height="32" rx="9" fill="url(#sl)" />
-      <rect x="5" y="10" width="22" height="15" rx="3" fill="white" fillOpacity="0.2" />
-      <rect x="5" y="10" width="22" height="15" rx="3" stroke="white" strokeOpacity="0.35" strokeWidth="1" />
-      <rect x="8" y="14" width="5" height="4" rx="1" fill="white" fillOpacity="0.8" />
-      <path d="M18 14.5 Q20 16 18 17.5" stroke="white" strokeOpacity="0.65" strokeWidth="1.1" strokeLinecap="round" fill="none" />
-      <path d="M20 13.5 Q23 16 20 18.5" stroke="white" strokeOpacity="0.4" strokeWidth="1.1" strokeLinecap="round" fill="none" />
-      <circle cx="9"  cy="21" r="1.2" fill="white" fillOpacity="0.7" />
-      <circle cx="13" cy="21" r="1.2" fill="white" fillOpacity="0.45" />
-      <circle cx="23" cy="9"  r="5"   fill="#10B981" />
-      <path d="M20.5 9l2 2 3-3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <defs>
-        <linearGradient id="sl" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#2563EB" /><stop offset="1" stopColor="#4F46E5" />
-        </linearGradient>
-      </defs>
-    </svg>
-  );
-}
+const PIN_ERROR_CODES = ["INVALID_PIN", "PIN_NOT_SET"];
 
-/* ─────────────────────────────────────────────────────────────
-   STEP: RECIPIENT
-───────────────────────────────────────────────────────────── */
 function StepRecipient({
   phone, setPhone, note, setNote,
   receiverLoading, receiverFound, receiverName, receiverError,
@@ -84,7 +43,6 @@ function StepRecipient({
   onSelectContact: (c: Contact) => void;
 }) {
   const [search, setSearch] = useState("");
-
   const filtered = recentContacts.filter(
     (c) =>
       c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -93,7 +51,6 @@ function StepRecipient({
 
   return (
     <div className="space-y-5">
-      {/* Phone input */}
       <div>
         <label className="mb-1.5 block text-xs font-semibold text-slate-600">
           Recipient phone number
@@ -113,11 +70,9 @@ function StepRecipient({
             </button>
           )}
         </div>
-
-        {/* Lookup states */}
         {receiverLoading && (
           <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
-            <Loader2 className="h-3 w-3 animate-spin" /> Looking up account…
+            <Loader2 className="h-3 w-3 animate-spin" /> Looking up account...
           </div>
         )}
         {receiverFound && receiverName && !receiverLoading && (
@@ -134,8 +89,6 @@ function StepRecipient({
           </div>
         )}
       </div>
-
-      {/* Note */}
       <div>
         <label className="mb-1.5 block text-xs font-semibold text-slate-600">
           Note <span className="font-normal text-slate-400">(optional)</span>
@@ -143,12 +96,10 @@ function StepRecipient({
         <input
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          placeholder="e.g. Rent payment, groceries…"
+          placeholder="e.g. Rent payment, groceries..."
           className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 transition-all"
         />
       </div>
-
-      {/* Recent contacts */}
       <div>
         <div className="mb-3 flex items-center justify-between">
           <p className="text-xs font-semibold text-slate-600">Recent contacts</p>
@@ -158,13 +109,12 @@ function StepRecipient({
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search…"
+                placeholder="Search..."
                 className="h-7 w-32 rounded-lg border border-slate-200 bg-slate-50 pl-7 pr-2 text-xs placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
               />
             </div>
           )}
         </div>
-
         {recentLoading ? (
           <div className="space-y-2">
             {[1, 2, 3].map((i) => (
@@ -181,9 +131,7 @@ function StepRecipient({
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 py-7 text-slate-400">
             <User className="h-7 w-7 mb-2 opacity-30" />
             <p className="text-xs font-semibold">No recent contacts yet</p>
-            <p className="text-[11px] mt-0.5 text-slate-400">
-              People you send to will appear here
-            </p>
+            <p className="text-[11px] mt-0.5 text-slate-400">People you send to will appear here</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 py-5 text-slate-400">
@@ -198,9 +146,7 @@ function StepRecipient({
                   onClick={() => onSelectContact(c)}
                   className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-slate-50"
                 >
-                  <div
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${c.avatar} text-[11px] font-bold text-white shadow-sm`}
-                  >
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${c.avatar} text-[11px] font-bold text-white shadow-sm`}>
                     {c.name.split(" ").map((s) => s[0]).join("").slice(0, 2)}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -214,7 +160,6 @@ function StepRecipient({
           </ul>
         )}
       </div>
-
       <Button
         onClick={onNext}
         disabled={phone.length < 10 || !receiverFound || receiverLoading}
@@ -226,15 +171,16 @@ function StepRecipient({
   );
 }
 
-/* ─────────────────────────────────────────────────────────────
-   STEP: AMOUNT
-───────────────────────────────────────────────────────────── */
 function StepAmount({
   amount, setAmount, receiver, balance, balanceLoading, onNext, onBack,
 }: {
-  amount: string; setAmount: (v: string) => void;
-  receiver: string; balance: number; balanceLoading: boolean;
-  onNext: () => void; onBack: () => void;
+  amount: string;
+  setAmount: (v: string) => void;
+  receiver: string;
+  balance: number;
+  balanceLoading: boolean;
+  onNext: () => void;
+  onBack: () => void;
 }) {
   const num   = parseFloat(amount) || 0;
   const valid = num > 0 && num <= balance;
@@ -254,11 +200,8 @@ function StepAmount({
           Change
         </button>
       </div>
-
       <div className="rounded-2xl border border-slate-200 bg-white p-5 text-center">
-        <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-slate-400">
-          Amount (PKR)
-        </p>
+        <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-slate-400">Amount (PKR)</p>
         <div className="flex items-center justify-center gap-2">
           <span className="text-2xl font-bold text-slate-400">Rs.</span>
           <input
@@ -283,7 +226,6 @@ function StepAmount({
           </p>
         )}
       </div>
-
       <div className="grid grid-cols-4 gap-2">
         {PRESETS.map((p) => (
           <button
@@ -299,18 +241,16 @@ function StepAmount({
           </button>
         ))}
       </div>
-
       <div className="flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2.5">
         <Check className="h-4 w-4 shrink-0 text-emerald-600" />
         <p className="text-[11px] font-medium text-emerald-700">
           Zero transfer fees · Amount received = amount sent
         </p>
       </div>
-
       <Button
         onClick={onNext}
         disabled={!valid}
-        className="w-full h-12 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-sm font-semibold shadow-lg shadow-blue-600/25 transition hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+        className="w-full h-12 rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 text-sm font-semibold shadow-lg shadow-blue-600/25 transition hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
       >
         Review transfer <ArrowRight className="ml-1.5 h-4 w-4" />
       </Button>
@@ -318,29 +258,31 @@ function StepAmount({
   );
 }
 
-/* ─────────────────────────────────────────────────────────────
-   STEP: PIN
-───────────────────────────────────────────────────────────── */
 function StepPin({
-  phone, receiverName, amount, note, pin, setPin,
-  pinVisible, setPinVisible, onConfirm, onBack, isSending,
+  phone, receiverName, amount, note,
+  pin, setPin, pinVisible, setPinVisible,
+  pinError,
+  onConfirm, onBack, isSending,
 }: {
-  phone: string; receiverName: string; amount: string; note: string;
-  pin: string; setPin: (v: string) => void;
-  pinVisible: boolean; setPinVisible: (v: boolean) => void;
-  onConfirm: () => void; onBack: () => void;
+  phone: string;
+  receiverName: string;
+  amount: string;
+  note: string;
+  pin: string;
+  setPin: (v: string) => void;
+  pinVisible: boolean;
+  setPinVisible: (v: boolean) => void;
+  pinError: string;
+  onConfirm: () => void;
+  onBack: () => void;
   isSending: boolean;
 }) {
   return (
     <div className="space-y-5">
       <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-4 text-white">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-blue-100">
-            Transfer summary
-          </p>
-          <p className="mt-1 text-3xl font-black">
-            Rs. {parseFloat(amount).toLocaleString()}
-          </p>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-blue-100">Transfer summary</p>
+          <p className="mt-1 text-3xl font-black">Rs. {parseFloat(amount).toLocaleString()}</p>
         </div>
         <div className="divide-y divide-slate-50 px-5">
           {[
@@ -357,7 +299,6 @@ function StepPin({
           ))}
         </div>
       </div>
-
       <div className="flex items-start gap-2.5 rounded-xl border border-blue-100 bg-blue-50 px-3 py-3">
         <Shield className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
         <p className="text-[11px] leading-relaxed text-blue-700">
@@ -365,13 +306,17 @@ function StepPin({
           the transaction will be blocked automatically.
         </p>
       </div>
-
       <div>
         <label className="mb-1.5 block text-xs font-semibold text-slate-600">
           Enter your 4-digit transaction PIN
         </label>
-        <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 focus-within:border-blue-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-500/10 transition-all">
-          <Lock className="h-4 w-4 shrink-0 text-slate-400" />
+        <div className={`flex items-center gap-2 rounded-xl border bg-slate-50 px-3 focus-within:bg-white focus-within:ring-2 transition-all
+          ${pinError
+            ? "border-rose-400 focus-within:border-rose-400 focus-within:ring-rose-500/10"
+            : "border-slate-200 focus-within:border-blue-400 focus-within:ring-blue-500/10"
+          }`}
+        >
+          <Lock className={`h-4 w-4 shrink-0 ${pinError ? "text-rose-400" : "text-slate-400"}`} />
           <input
             type={pinVisible ? "text" : "password"}
             inputMode="numeric"
@@ -385,8 +330,14 @@ function StepPin({
             {pinVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
+        {/* Inline PIN error — stays on this step, no navigation away */}
+        {pinError && (
+          <div className="mt-2 flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2">
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-rose-500" />
+            <p className="text-xs font-semibold text-rose-600">{pinError}</p>
+          </div>
+        )}
       </div>
-
       <div className="flex gap-3">
         <Button
           onClick={onBack}
@@ -402,7 +353,7 @@ function StepPin({
           className="h-12 flex-[2] rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-sm font-semibold shadow-lg shadow-blue-600/25 transition hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSending ? (
-            <><Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Sending…</>
+            <><Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Sending...</>
           ) : (
             <>Confirm & Send <ArrowRight className="ml-1.5 h-4 w-4" /></>
           )}
@@ -412,9 +363,6 @@ function StepPin({
   );
 }
 
-/* ─────────────────────────────────────────────────────────────
-   STEP: PROCESSING
-───────────────────────────────────────────────────────────── */
 function StepProcessing() {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -425,7 +373,7 @@ function StepProcessing() {
           <Shield className="h-8 w-8 text-blue-600" />
         </div>
       </div>
-      <p className="text-base font-bold text-slate-900">Running AI fraud check…</p>
+      <p className="text-base font-bold text-slate-900">Running AI fraud check...</p>
       <p className="mt-1.5 max-w-xs text-sm text-slate-500">
         Analyzing transaction patterns and risk signals in real time.
       </p>
@@ -444,38 +392,32 @@ function StepProcessing() {
   );
 }
 
-/* ─────────────────────────────────────────────────────────────
-   STEP: RESULT
-───────────────────────────────────────────────────────────── */
 function StepResult({
   type, amount, receiverName, riskScore, reasons, apiError, onDone,
 }: {
-  type: ResultType; amount: string; receiverName: string;
-  riskScore: number; reasons: string[]; apiError?: string | null;
+  type: ResultType;
+  amount: string;
+  receiverName: string;
+  riskScore: number;
+  reasons: string[];
+  apiError?: string | null;
   onDone: () => void;
 }) {
   const approved = type === "approved";
 
   return (
     <div className="flex flex-col items-center text-center">
-      <div
-        className={`relative mb-5 flex h-20 w-20 items-center justify-center rounded-full shadow-lg ${
-          approved
-            ? "bg-gradient-to-br from-emerald-400 to-teal-500 shadow-emerald-400/30"
-            : "bg-gradient-to-br from-rose-400 to-rose-600 shadow-rose-400/30"
-        }`}
-      >
+      <div className={`relative mb-5 flex h-20 w-20 items-center justify-center rounded-full shadow-lg ${
+        approved
+          ? "bg-linear-to-br from-emerald-400 to-teal-500 shadow-emerald-400/30"
+          : "bg-linear-to-br from-rose-400 to-rose-600 shadow-rose-400/30"
+      }`}>
         {approved
           ? <Check className="h-9 w-9 text-white" strokeWidth={3} />
           : <X     className="h-9 w-9 text-white" strokeWidth={3} />
         }
-        <div
-          className={`absolute inset-0 animate-ping rounded-full opacity-20 ${
-            approved ? "bg-emerald-400" : "bg-rose-400"
-          }`}
-        />
+        <div className={`absolute inset-0 animate-ping rounded-full opacity-20 ${approved ? "bg-emerald-400" : "bg-rose-400"}`} />
       </div>
-
       <p className="text-xl font-black text-slate-900">
         {approved ? "Transfer Successful!" : "Transaction Blocked!"}
       </p>
@@ -485,30 +427,20 @@ function StepResult({
           : `Rs. ${parseFloat(amount).toLocaleString()} transfer was blocked by AI`
         }
       </p>
-
       {apiError && (
         <div className="mt-3 flex w-full items-start gap-2 rounded-xl border border-rose-100 bg-rose-50 px-3 py-2.5">
           <WifiOff className="mt-0.5 h-3.5 w-3.5 shrink-0 text-rose-500" />
           <p className="text-[11px] text-rose-700">{apiError}</p>
         </div>
       )}
-
-      <div
-        className={`mt-5 w-full rounded-2xl border p-4 text-left ${
-          approved ? "border-emerald-100 bg-emerald-50" : "border-rose-100 bg-rose-50"
-        }`}
-      >
+      <div className={`mt-5 w-full rounded-2xl border p-4 text-left ${approved ? "border-emerald-100 bg-emerald-50" : "border-rose-100 bg-rose-50"}`}>
         <div className="flex items-center justify-between mb-2">
           <p className="text-xs font-semibold text-slate-600">Risk score</p>
-          <span
-            className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
-              riskScore < 30
-                ? "bg-emerald-100 text-emerald-700"
-                : riskScore < 70
-                ? "bg-amber-100 text-amber-700"
-                : "bg-rose-100 text-rose-700"
-            }`}
-          >
+          <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
+            riskScore < 30 ? "bg-emerald-100 text-emerald-700"
+            : riskScore < 70 ? "bg-amber-100 text-amber-700"
+            : "bg-rose-100 text-rose-700"
+          }`}>
             {riskScore}%
           </span>
         </div>
@@ -530,7 +462,6 @@ function StepResult({
           </ul>
         )}
       </div>
-
       <div className="mt-5 flex w-full gap-3">
         <Link to="/history" className="flex-1">
           <Button variant="outline" className="w-full h-11 rounded-xl border-slate-200 text-sm font-semibold text-slate-700">
@@ -539,7 +470,7 @@ function StepResult({
         </Link>
         <Button
           onClick={onDone}
-          className="flex-1 h-11 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-sm font-semibold shadow-md shadow-blue-600/25"
+          className="flex-1 h-11 rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 text-sm font-semibold shadow-md shadow-blue-600/25"
         >
           Send again
         </Button>
@@ -548,17 +479,10 @@ function StepResult({
   );
 }
 
-/* ─────────────────────────────────────────────────────────────
-   MAIN PAGE
-───────────────────────────────────────────────────────────── */
 export function SendMoney() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  /* ── data hooks ── */
   const { data: wallet, isLoading: walletLoading } = useWallet();
   const sendMoneyMutation = useSendMoney();
 
-  /* ── form state ── */
   const [step,         setStep]         = useState<Step>("recipient");
   const [phone,        setPhone]        = useState("");
   const [receiverName, setReceiverName] = useState("");
@@ -566,65 +490,46 @@ export function SendMoney() {
   const [amount,       setAmount]       = useState("");
   const [pin,          setPin]          = useState("");
   const [pinVisible,   setPinVisible]   = useState(false);
+  const [pinError,     setPinError]     = useState("");
 
-  /* ── receiver lookup state ── */
   const [receiverLoading, setReceiverLoading] = useState(false);
   const [receiverFound,   setReceiverFound]   = useState(false);
   const [receiverError,   setReceiverError]   = useState("");
 
-  /* ── recent contacts state ── */
   const [recentContacts, setRecentContacts] = useState<Contact[]>([]);
   const [recentLoading,  setRecentLoading]  = useState(true);
 
-  /* ── result state ── */
-  const [resultType,   setResultType]   = useState<ResultType>("approved");
-  const [riskScore,    setRiskScore]    = useState(0);
-  const [riskReasons,  setRiskReasons]  = useState<string[]>([]);
-  const [apiError,     setApiError]     = useState<string | null>(null);
+  const [resultType,  setResultType]  = useState<ResultType>("approved");
+  const [riskScore,   setRiskScore]   = useState(0);
+  const [riskReasons, setRiskReasons] = useState<string[]>([]);
+  const [apiError,    setApiError]    = useState<string | null>(null);
 
   const BALANCE: number = (wallet as any)?.balance ?? 0;
 
-  /* ── Load recent contacts on mount ── */
   useEffect(() => {
     setRecentLoading(true);
     walletApi
       .getRecentContacts()
       .then((res: any) => {
         const contacts = res.data?.data ?? [];
-        // Shape: [{ full_name, phone }] → map to Contact
         setRecentContacts(
           contacts.map((u: any, i: number) => ({
             name:   u.full_name ?? u.name ?? "Unknown",
             phone:  u.phone,
-            avatar: ["from-blue-500 to-indigo-600", "from-emerald-500 to-teal-600",
-                     "from-rose-500 to-pink-600",   "from-violet-500 to-purple-600",
-                     "from-amber-500 to-orange-600"][i % 5],
+            avatar: [
+              "from-blue-500 to-indigo-600",
+              "from-emerald-500 to-teal-600",
+              "from-rose-500 to-pink-600",
+              "from-violet-500 to-purple-600",
+              "from-amber-500 to-orange-600",
+            ][i % 5],
           }))
         );
       })
-      .catch((e: any) => {
-  if (cancelled) return;
-  setReceiverFound(false);
-  setReceiverName("");
-
-  const code    = e?.response?.data?.code;
-  const status  = e?.response?.status;
-  const message = e?.response?.data?.message;
-
-  if (status === 404 || code === "USER_NOT_FOUND") {
-    setReceiverError("No SafePay account found on this number.");
-  } else if (code === "SELF_TRANSFER") {
-    setReceiverError("This is your own number. You can't send money to yourself.");
-  } else if (code === "ACCOUNT_FROZEN") {
-    setReceiverError("This account is currently unavailable.");
-  } else {
-    setReceiverError(message ?? "Could not verify this number. Try again.");
-  }
-}) 
+      .catch(() => {})
       .finally(() => setRecentLoading(false));
   }, []);
 
-  /* ── Receiver lookup — fires on every phone change ── */
   useEffect(() => {
     if (phone.length !== 10) {
       setReceiverFound(false);
@@ -649,60 +554,74 @@ export function SendMoney() {
         if (cancelled) return;
         setReceiverFound(false);
         setReceiverName("");
-        setReceiverError(
-          e?.response?.status === 404
-            ? "No SafePay account found on this number."
-            : e?.response?.data?.message ?? "Could not verify this number. Try again."
-        );
+        const code    = e?.response?.data?.code;
+        const status  = e?.response?.status;
+        const message = e?.response?.data?.message;
+        if (status === 404 || code === "USER_NOT_FOUND") {
+          setReceiverError("No SafePay account found on this number.");
+        } else if (code === "SELF_TRANSFER") {
+          setReceiverError("This is your own number. You can't send money to yourself.");
+        } else if (code === "ACCOUNT_FROZEN") {
+          setReceiverError("This account is currently unavailable.");
+        } else {
+          setReceiverError(message ?? "Could not verify this number. Try again.");
+        }
       })
-      .finally(() => {
-        if (!cancelled) setReceiverLoading(false);
-      });
+      .finally(() => { if (!cancelled) setReceiverLoading(false); });
 
-    return () => { cancelled = true; };   // cleanup on fast typing
+    return () => { cancelled = true; };
   }, [phone]);
 
-  /* ── Handlers ── */
   function handleSelectContact(contact: Contact) {
-    // strip leading 0 → store as 10 digits
     setPhone(contact.phone.replace(/^0/, ""));
     setReceiverName(contact.name);
-    // Contact is already verified (they're in recent list), so skip lookup
     setReceiverFound(true);
     setReceiverError("");
     setStep("amount");
   }
 
   function handleConfirm() {
+    setPinError("");
     setStep("processing");
     setApiError(null);
 
     sendMoneyMutation.mutate(
       {
-        receiver_phone: "0" + phone,   // "0" + 10-digit → "03XXXXXXXXX"
-        amount:  parseFloat(amount),
+        receiver_phone: "0" + phone,
+        amount: parseFloat(amount),
         note,
         pin,
       },
       {
         onSuccess: (response: any) => {
           const result  = response?.data?.data ?? response?.data ?? {};
-          // API returns risk_score (not riskScore) and UPPERCASE status
           const score   = typeof result.risk_score === "number" ? result.risk_score : 0;
           const status: ResultType = result.status === "BLOCKED" ? "blocked" : "approved";
           const reasons: string[]  = Array.isArray(result.reasons) ? result.reasons : [];
-
           setRiskScore(Math.round(score));
           setResultType(status);
           setRiskReasons(reasons);
           setStep("result");
         },
         onError: (error: any) => {
+          const code       = error?.response?.data?.code;
+          const message    = error?.response?.data?.message;
           const serverData = error?.response?.data?.data ?? error?.response?.data ?? {};
-          const score      = typeof serverData.risk_score === "number" ? serverData.risk_score : 85;
+
+          // ── Wrong PIN: stay on PIN step with inline error, don't navigate away ──
+          if (PIN_ERROR_CODES.includes(code) || error?.response?.status === 401) {
+            setPin("");
+            setPinError(message ?? "Incorrect PIN. Please try again.");
+            setStep("pin");
+            sendMoneyMutation.reset();
+            return;
+          }
+
+          // ── Everything else: blocked result screen ──
+          const score   = typeof serverData.risk_score === "number" ? serverData.risk_score : 85;
           const reasons: string[] = Array.isArray(serverData.reasons)
             ? serverData.reasons
-            : [serverData.message ?? error?.message ?? "Transaction could not be completed."];
+            : [message ?? error?.message ?? "Transaction could not be completed."];
 
           setRiskScore(Math.round(score));
           setResultType("blocked");
@@ -719,248 +638,158 @@ export function SendMoney() {
 
   function reset() {
     setStep("recipient");
-    setPhone(""); setReceiverName(""); setNote("");
-    setAmount(""); setPin("");
-    setReceiverFound(false); setReceiverError("");
-    setRiskScore(0); setRiskReasons([]); setApiError(null);
+    setPhone("");
+    setReceiverName("");
+    setNote("");
+    setAmount("");
+    setPin("");
+    setPinError("");
+    setReceiverFound(false);
+    setReceiverError("");
+    setRiskScore(0);
+    setRiskReasons([]);
+    setApiError(null);
     sendMoneyMutation.reset();
   }
 
-  /* ── Step indicator ── */
-  const STEP_ORDER: Step[]  = ["recipient", "amount", "pin", "processing", "result"];
-  const STEP_LABELS         = ["Recipient", "Amount", "Confirm"];
-  const stepIndex           = STEP_ORDER.indexOf(step);
-  const displayIndex        = Math.min(stepIndex, 2);
+  const STEP_ORDER: Step[] = ["recipient", "amount", "pin", "processing", "result"];
+  const STEP_LABELS        = ["Recipient", "Amount", "Confirm"];
+  const stepIndex          = STEP_ORDER.indexOf(step);
+  const displayIndex       = Math.min(stepIndex, 2);
+  const showTitle          = step !== "processing" && step !== "result";
 
-  /* ─────────────────────────────
-     RENDER
-  ───────────────────────────── */
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50 font-sans">
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-20 bg-slate-900/40 backdrop-blur-sm md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* ── Sidebar ── */}
-      <aside
-        className={`fixed inset-y-0 left-0 z-30 flex w-64 flex-col bg-white border-r border-slate-100 shadow-sm transition-transform duration-300 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } md:relative md:translate-x-0`}
-      >
-        <div className="flex h-16 items-center gap-3 border-b border-slate-100 px-5">
-          <LogoMark size={34} />
-          <div className="leading-none">
-            <p className="text-[16px] font-bold text-slate-900">
-              Safe<span className="text-blue-600">Pay</span>
-            </p>
-            <p className="text-[10px] font-medium uppercase tracking-widest text-slate-400">
-              Pakistan
-            </p>
-          </div>
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="ml-auto text-slate-400 md:hidden"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
-          {NAV.map(({ icon: Icon, label, to }) => {
-            const active = label === "Send Money";
-            return (
-              <Link
-                key={label}
-                to={to}
-                className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
-                  active
-                    ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/25"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                }`}
-              >
-                <Icon
-                  className={`h-4 w-4 shrink-0 ${
-                    active ? "text-white" : "text-slate-400 group-hover:text-slate-600"
-                  }`}
-                />
-                {label}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="border-t border-slate-100 p-4">
-          <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-bold text-white shadow-sm">
-              WA
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-slate-800">Waseem Akram</p>
-              <p className="truncate text-[11px] text-slate-500">+92 343 1077698</p>
-            </div>
-            <button className="text-slate-400 hover:text-rose-500 transition-colors">
-              <LogOut className="h-4 w-4" />
-            </button>
+    <AppLayout
+      title={showTitle ? "Send Money" : undefined}
+      subtitle={showTitle ? "Fast, secure, AI-protected transfers." : undefined}
+      headerRight={
+        <div className="flex items-center gap-2">
+          <div className="hidden items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 sm:flex">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+            </span>
+            <span className="text-[11px] font-semibold text-emerald-700">AI protection active</span>
           </div>
         </div>
-      </aside>
-
-      {/* ── Main ── */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-100 bg-white px-5 shadow-sm">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 md:hidden"
-            >
-              <Menu className="h-4 w-4" />
-            </button>
-            <Link
-              to="/dashboard"
-              className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors"
-            >
-              <ArrowLeft className="h-4 w-4" /> Dashboard
+      }
+    >
+      <div className="p-5 md:p-8">
+        <div className="mx-auto max-w-md">
+          {showTitle && (
+            <Link to="/dashboard" className="mb-5 flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors w-fit">
+              <ArrowLeft className="h-4 w-4" /> Back to Dashboard
             </Link>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="hidden items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 sm:flex">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-              </span>
-              <span className="text-[11px] font-semibold text-emerald-700">AI protection active</span>
-            </div>
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-bold text-white shadow-sm">
-              WA
-            </div>
-          </div>
-        </header>
+          )}
 
-        <main className="flex-1 overflow-y-auto p-5 md:p-8">
-          <div className="mx-auto max-w-md">
-            {step !== "processing" && step !== "result" && (
-              <div className="mb-6">
-                <h1 className="text-xl font-bold text-slate-900">Send Money</h1>
-                <p className="text-sm text-slate-500">Fast, secure, AI-protected transfers.</p>
-              </div>
-            )}
-
-            {step !== "processing" && step !== "result" && (
-              <div className="mb-6">
-                <div className="flex items-center gap-2">
-                  {STEP_LABELS.map((label, i) => (
-                    <div key={label} className="flex items-center gap-2 flex-1">
-                      <div
-                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-all ${
-                          i < displayIndex
-                            ? "bg-blue-600 text-white"
-                            : i === displayIndex
-                            ? "bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/30"
-                            : "bg-slate-100 text-slate-400"
-                        }`}
-                      >
-                        {i < displayIndex ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : i + 1}
-                      </div>
-                      <span
-                        className={`text-xs font-semibold ${
-                          i === displayIndex ? "text-slate-900" : "text-slate-400"
-                        }`}
-                      >
-                        {label}
-                      </span>
-                      {i < STEP_LABELS.length - 1 && (
-                        <div
-                          className={`flex-1 h-px transition-all ${
-                            i < displayIndex ? "bg-blue-600" : "bg-slate-200"
-                          }`}
-                        />
-                      )}
+          {showTitle && (
+            <div className="mb-6">
+              <div className="flex items-center gap-2">
+                {STEP_LABELS.map((label, i) => (
+                  <div key={label} className="flex items-center gap-2 flex-1">
+                    <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-all ${
+                      i < displayIndex
+                        ? "bg-blue-600 text-white"
+                        : i === displayIndex
+                        ? "bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/30"
+                        : "bg-slate-100 text-slate-400"
+                    }`}>
+                      {i < displayIndex ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : i + 1}
                     </div>
-                  ))}
-                </div>
+                    <span className={`text-xs font-semibold ${i === displayIndex ? "text-slate-900" : "text-slate-400"}`}>
+                      {label}
+                    </span>
+                    {i < STEP_LABELS.length - 1 && (
+                      <div className={`flex-1 h-px transition-all ${i < displayIndex ? "bg-blue-600" : "bg-slate-200"}`} />
+                    )}
+                  </div>
+                ))}
               </div>
+            </div>
+          )}
+
+          <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+            {step === "recipient" && (
+              <StepRecipient
+                phone={phone}
+                setPhone={(v) => {
+                  setPhone(v);
+                  if (v.length !== 10) {
+                    setReceiverFound(false);
+                    setReceiverName("");
+                    setReceiverError("");
+                  }
+                }}
+                note={note}
+                setNote={setNote}
+                receiverLoading={receiverLoading}
+                receiverFound={receiverFound}
+                receiverName={receiverName}
+                receiverError={receiverError}
+                recentContacts={recentContacts}
+                recentLoading={recentLoading}
+                onNext={() => setStep("amount")}
+                onSelectContact={handleSelectContact}
+              />
             )}
 
-            <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-              {step === "recipient" && (
-                <StepRecipient
-                  phone={phone}
-                  setPhone={(v) => {
-                    setPhone(v);
-                    // reset found state on change (useEffect handles lookup)
-                    if (v.length !== 10) {
-                      setReceiverFound(false);
-                      setReceiverName("");
-                      setReceiverError("");
-                    }
-                  }}
-                  note={note}
-                  setNote={setNote}
-                  receiverLoading={receiverLoading}
-                  receiverFound={receiverFound}
-                  receiverName={receiverName}
-                  receiverError={receiverError}
-                  recentContacts={recentContacts}
-                  recentLoading={recentLoading}
-                  onNext={() => setStep("amount")}
-                  onSelectContact={handleSelectContact}
-                />
-              )}
-              {step === "amount" && (
-                <StepAmount
-                  amount={amount}
-                  setAmount={setAmount}
-                  receiver={receiverName || "+92 " + phone}
-                  balance={BALANCE}
-                  balanceLoading={walletLoading}
-                  onNext={() => setStep("pin")}
-                  onBack={() => setStep("recipient")}
-                />
-              )}
-              {step === "pin" && (
-                <StepPin
-                  phone={phone}
-                  receiverName={receiverName}
-                  amount={amount}
-                  note={note}
-                  pin={pin}
-                  setPin={setPin}
-                  pinVisible={pinVisible}
-                  setPinVisible={setPinVisible}
-                  onConfirm={handleConfirm}
-                  onBack={() => setStep("amount")}
-                  isSending={sendMoneyMutation.isPending}
-                />
-              )}
-              {step === "processing" && <StepProcessing />}
-              {step === "result" && (
-                <StepResult
-                  type={resultType}
-                  amount={amount}
-                  receiverName={receiverName || "+92 " + phone}
-                  riskScore={riskScore}
-                  reasons={riskReasons}
-                  apiError={apiError}
-                  onDone={reset}
-                />
-              )}
-            </div>
+            {step === "amount" && (
+              <StepAmount
+                amount={amount}
+                setAmount={setAmount}
+                receiver={receiverName || "+92 " + phone}
+                balance={BALANCE}
+                balanceLoading={walletLoading}
+                onNext={() => setStep("pin")}
+                onBack={() => setStep("recipient")}
+              />
+            )}
 
-            {(step === "recipient" || step === "amount") && (
-              <div className="mt-4 flex items-center justify-center gap-2 text-xs text-slate-500">
-                <Wallet className="h-3.5 w-3.5 text-slate-400" />
-                Available balance:
-                {walletLoading ? (
-                  <span className="inline-block h-3 w-20 animate-pulse rounded bg-slate-200" />
-                ) : (
-                  <span className="font-bold text-slate-800">Rs. {BALANCE.toLocaleString()}</span>
-                )}
-              </div>
+            {step === "pin" && (
+              <StepPin
+                phone={phone}
+                receiverName={receiverName}
+                amount={amount}
+                note={note}
+                pin={pin}
+                setPin={(v) => { setPin(v); if (pinError) setPinError(""); }}
+                pinVisible={pinVisible}
+                setPinVisible={setPinVisible}
+                pinError={pinError}
+                onConfirm={handleConfirm}
+                onBack={() => setStep("amount")}
+                isSending={sendMoneyMutation.isPending}
+              />
+            )}
+
+            {step === "processing" && <StepProcessing />}
+
+            {step === "result" && (
+              <StepResult
+                type={resultType}
+                amount={amount}
+                receiverName={receiverName || "+92 " + phone}
+                riskScore={riskScore}
+                reasons={riskReasons}
+                apiError={apiError}
+                onDone={reset}
+              />
             )}
           </div>
-        </main>
+
+          {(step === "recipient" || step === "amount") && (
+            <div className="mt-4 flex items-center justify-center gap-2 text-xs text-slate-500">
+              <Wallet className="h-3.5 w-3.5 text-slate-400" />
+              Available balance:
+              {walletLoading ? (
+                <span className="inline-block h-3 w-20 animate-pulse rounded bg-slate-200" />
+              ) : (
+                <span className="font-bold text-slate-800">Rs. {BALANCE.toLocaleString()}</span>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </AppLayout>
   );
 }

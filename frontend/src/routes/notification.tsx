@@ -1,8 +1,8 @@
-import { createFileRoute } from '@tanstack/react-router'
-import   { NotificationsPage } from '@/pages/notification'
+import { createFileRoute } from "@tanstack/react-router";
+import { NotificationsPage } from "@/pages/notification";
+import { requireAuth } from "@/lib/guards";
 
-export const Route = createFileRoute('/notification')({
-  component: NotificationsPage,
-})
-
-
+export const Route = createFileRoute("/notification")({
+  beforeLoad: requireAuth,
+  component:  NotificationsPage,
+});

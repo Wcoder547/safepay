@@ -67,10 +67,9 @@ export const useLogout = () => {
     mutationFn: () => authApi.logout(),
 
     onSettled: () => {
-      // Always clear state even if API call fails
       logout();
-      queryClient.clear();  // wipe all cached data
-      navigate({ to: "/login" });
+      queryClient.clear();  
+      navigate({ to: "/sign-in" });
     },
   });
 };

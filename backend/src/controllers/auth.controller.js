@@ -571,7 +571,130 @@ const resetPassword = AsyncHandler(async (req, res) => {
   );
 });
 
-export { register, login, refresh, logout, me, forgotPassword, resetPassword };
+const changePassword = AsyncHandler(async (req, res) => {
+  const { current_password, new_password } = req.body;
+
+  if (!current_password || !new_password) {
+    throw new ApiError(422, "All fields are required.", {
+      code: "VALIDATION_ERROR",
+    });
+  }
+
+  if (!/^(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/.test(new_password)) {
+    throw new ApiError(422, "Password too weak.", { code: "VALIDATION_ERROR" });
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+  const isValid = await bcrypt.compare(current_password, user.password_hash);
+
+  if (!isValid) {
+    throw new ApiError(401, "Current password is incorrect.", {
+      code: "INVALID_CREDENTIALS",
+    });
+  }
+
+  const hashed = await bcrypt.hash(new_password, 10);
+  await prisma.user.update({
+    where: { id: req.user.id },
+    data: { password_hash: hashed },
+  });
+
+  // Revoke all sessions so other devices are logged out
+  await prisma.session.updateMany({
+    where: { user_id: req.user.id },
+    data: { is_revoked: true },
+  });
+
+  return res.status(200).json(
+    new ApiResponse(200, null, "Password changed successfully.")
+  );
+});
 
 
+const getSessions = AsyncHandler(async (req, res) => {
+  const incomingToken = req.cookies?.refresh_token;
+  const currentHash   = incomingToken ? hashToken(incomingToken) : null;
+
+  const sessions = await prisma.session.findMany({
+    where: {
+      user_id:    req.user.id,
+      is_revoked: false,
+      expires_at: { gt: new Date() },
+    },
+    select: {
+      id:          true,
+      device_info: true,
+      ip_address:  true,
+      created_at:  true,
+      expires_at:  true,
+      token_hash:  true,   // used server-side only to flag current
+    },
+    orderBy: { created_at: "desc" },
+  });
+
+  const result = sessions.map((s) => ({
+    id:          s.id,
+    device_info: s.device_info ?? "Unknown device",
+    ip_address:  s.ip_address  ?? "—",
+    created_at:  s.created_at,
+    expires_at:  s.expires_at,
+    is_current:  s.token_hash === currentHash,   // never expose token_hash to client
+  }));
+
+  return res.status(200).json(
+    new ApiResponse(200, { sessions: result }, "Sessions fetched.")
+  );
+});
+
+
+const revokeSession = AsyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const incomingToken = req.cookies?.refresh_token;
+  const currentHash   = incomingToken ? hashToken(incomingToken) : null;
+
+  const session = await prisma.session.findFirst({
+    where: { id, user_id: req.user.id, is_revoked: false },
+  });
+
+  if (!session) {
+    throw new ApiError(404, "Session not found.", { code: "NOT_FOUND" });
+  }
+
+  if (session.token_hash === currentHash) {
+    throw new ApiError(400, "Cannot revoke your current session. Use logout instead.", {
+      code: "CANNOT_REVOKE_CURRENT",
+    });
+  }
+
+  await prisma.session.update({
+    where: { id },
+    data:  { is_revoked: true },
+  });
+
+  return res.status(200).json(
+    new ApiResponse(200, null, "Session revoked.")
+  );
+});
+
+
+const revokeAllOtherSessions = AsyncHandler(async (req, res) => {
+  const incomingToken = req.cookies?.refresh_token;
+  const currentHash   = incomingToken ? hashToken(incomingToken) : null;
+
+  await prisma.session.updateMany({
+    where: {
+      user_id:    req.user.id,
+      is_revoked: false,
+      NOT: { token_hash: currentHash ?? "" },
+    },
+    data: { is_revoked: true },
+  });
+
+  return res.status(200).json(
+    new ApiResponse(200, null, "All other sessions revoked.")
+  );
+});
+
+
+export { register, login, refresh, logout, me, forgotPassword, resetPassword, changePassword  , getSessions, revokeSession, revokeAllOtherSessions};
 

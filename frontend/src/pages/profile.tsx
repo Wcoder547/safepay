@@ -1,50 +1,39 @@
-import { useState, useRef } from "react";
-import { Link } from "@tanstack/react-router";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
-  Bell, Camera, Check, CreditCard,
-  Edit2, Eye, EyeOff, KeyRound,
-  LayoutDashboard, Lock, LogOut,
-  Mail, Phone, Send, Settings,
-  Shield, User, Wallet, X,
-  BadgeCheck, AlertTriangle, Copy,
+  BadgeCheck, AlertTriangle, Camera, Check,
+  Copy, Edit2, Eye, EyeOff, KeyRound,
+  Lock, LogOut, Mail, Phone,
+  Shield, User, Wallet, X, Loader2, RefreshCw,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AppLayout } from "@/components/AppLayout";
+import { authApi } from "@/api/endpoints/auth.api";
+import useAuthStore from "@/store/auth.store";
 
-
-const USER = {
-  id:               "66a78868-018a-4376-91c0-04b9b193fae5",
-  full_name:        "Waseem Akram",
-  email:            "mw5667155@gmail.com",
-  phone:            "03431077698",
-  cnic:             "38405-5723074-1",
-  role:             "user",
-  is_verified:      true,
-  is_email_verified:false,
-  avatar_url:       null,
-  created_at:       "2026-05-01T10:00:00Z",
-  last_login:       "2026-05-10T11:30:00Z",
-  wallet_balance:   45200,
-};
-
-
-function LogoMark({ size = 32 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
-      <rect width="32" height="32" rx="9" fill="url(#dlp)"/>
-      <rect x="5" y="10" width="22" height="15" rx="3" fill="white" fillOpacity="0.2"/>
-      <rect x="5" y="10" width="22" height="15" rx="3" stroke="white" strokeOpacity="0.35" strokeWidth="1"/>
-      <rect x="8" y="14" width="5" height="4" rx="1" fill="white" fillOpacity="0.8"/>
-      <circle cx="23" cy="9" r="5" fill="#10B981"/>
-      <path d="M20.5 9l2 2 3-3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <defs>
-        <linearGradient id="dlp" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#2563EB"/><stop offset="1" stopColor="#4F46E5"/>
-        </linearGradient>
-      </defs>
-    </svg>
-  );
+/* ── Types ── */
+interface UserProfile {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  role: string;
+  is_verified: boolean;
+  is_frozen: boolean;
+  is_email_verified?: boolean;
+  cnic?: string;
+  avatar_url: string | null;
+  created_at: string;
+  last_login: string;
+  wallet: {
+    id: string;
+    balance: string;
+    currency: string;
+  };
 }
 
+/* ── InfoRow ── */
 function InfoRow({
   label, value, mono = false, copyable = false,
 }: {
@@ -64,7 +53,8 @@ function InfoRow({
           {value}
         </p>
         {copyable && (
-          <button onClick={copy}
+          <button
+            onClick={copy}
             className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:border-blue-300 hover:text-blue-600 transition-colors"
           >
             {copied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
@@ -75,14 +65,15 @@ function InfoRow({
   );
 }
 
-
+/* ── Change Password Modal ── */
 function ChangePasswordModal({ onClose }: { onClose: () => void }) {
-  const [form, setForm]     = useState({ current: "", newPass: "", confirm: "" });
-  const [show, setShow]     = useState({ current: false, newPass: false, confirm: false });
-  const [error, setError]   = useState("");
+  const [form, setForm]       = useState({ current: "", newPass: "", confirm: "" });
+  const [show, setShow]       = useState({ current: false, newPass: false, confirm: false });
+  const [error, setError]     = useState("");
+  const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!form.current || !form.newPass || !form.confirm) {
       setError("All fields are required."); return;
     }
@@ -93,8 +84,22 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
       setError("Password must be at least 8 characters."); return;
     }
     setError("");
-    setSuccess(true);
-    setTimeout(onClose, 1500);
+    setLoading(true);
+    try {
+      // POST /auth/change-password — adjust endpoint if your backend differs
+      await (authApi as any).changePassword?.({
+        current_password: form.current,
+        new_password: form.newPass,
+      });
+      setSuccess(true);
+      setTimeout(onClose, 1500);
+    } catch (e: any) {
+      setError(
+        e?.response?.data?.message ?? e?.message ?? "Failed to update password. Try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -105,7 +110,8 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
             <p className="text-sm font-bold text-slate-900">Change Password</p>
             <p className="text-[11px] text-slate-400">Keep your account secure</p>
           </div>
-          <button onClick={onClose}
+          <button
+            onClick={onClose}
             className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 text-slate-400 hover:bg-slate-50"
           >
             <X className="h-4 w-4" />
@@ -122,9 +128,9 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
           ) : (
             <>
               {[
-                { key: "current", label: "Current Password",  showKey: "current" },
-                { key: "newPass", label: "New Password",      showKey: "newPass" },
-                { key: "confirm", label: "Confirm Password",  showKey: "confirm" },
+                { key: "current", label: "Current Password", showKey: "current" },
+                { key: "newPass", label: "New Password",     showKey: "newPass" },
+                { key: "confirm", label: "Confirm Password", showKey: "confirm" },
               ].map(({ key, label, showKey }) => (
                 <div key={key}>
                   <p className="text-[11px] font-semibold text-slate-500 mb-1">{label}</p>
@@ -143,7 +149,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
                     >
                       {show[showKey as keyof typeof show]
                         ? <EyeOff className="h-4 w-4" />
-                        : <Eye className="h-4 w-4" />}
+                        : <Eye    className="h-4 w-4" />}
                     </button>
                   </div>
                 </div>
@@ -154,17 +160,15 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
                 </p>
               )}
               <div className="flex gap-2 pt-2">
-                <Button variant="outline"
-                  onClick={onClose}
+                <Button variant="outline" onClick={onClose} disabled={loading}
                   className="flex-1 h-10 rounded-xl border-slate-200 text-sm font-semibold"
                 >
                   Cancel
                 </Button>
-                <Button
-                  onClick={handleSubmit}
-                  className="flex-1 h-10 rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 text-white text-sm font-bold shadow-md shadow-blue-600/20"
+                <Button onClick={handleSubmit} disabled={loading}
+                  className="flex-1 h-10 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-bold shadow-md shadow-blue-600/20"
                 >
-                  Update
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Update"}
                 </Button>
               </div>
             </>
@@ -175,13 +179,14 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-
+/* ── Change PIN Modal ── */
 function ChangePinModal({ onClose }: { onClose: () => void }) {
-  const [form, setForm]   = useState({ current: "", newPin: "", confirm: "" });
-  const [error, setError] = useState("");
+  const [form, setForm]       = useState({ current: "", newPin: "", confirm: "" });
+  const [error, setError]     = useState("");
+  const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!form.current || !form.newPin || !form.confirm) {
       setError("All fields are required."); return;
     }
@@ -191,13 +196,28 @@ function ChangePinModal({ onClose }: { onClose: () => void }) {
     if (form.newPin !== form.confirm) {
       setError("PINs do not match."); return;
     }
-    const weak = ["1234","4321","0000","1111","2222","3333","4444"];
+    const weak = ["1234", "4321", "0000", "1111", "2222", "3333", "4444"];
     if (weak.includes(form.newPin)) {
       setError("PIN is too weak. Choose a stronger one."); return;
     }
     setError("");
-    setSuccess(true);
-    setTimeout(onClose, 1500);
+    setLoading(true);
+    try {
+      // Uses authApi.changePin — calls POST /auth/pin/change
+      await authApi.changePin({
+        current_pin: form.current,
+        new_pin: form.newPin,
+        confirm_pin: form.confirm,
+      });
+      setSuccess(true);
+      setTimeout(onClose, 1500);
+    } catch (e: any) {
+      setError(
+        e?.response?.data?.message ?? e?.message ?? "Failed to update PIN. Try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -208,7 +228,8 @@ function ChangePinModal({ onClose }: { onClose: () => void }) {
             <p className="text-sm font-bold text-slate-900">Change Transaction PIN</p>
             <p className="text-[11px] text-slate-400">4-digit PIN for sending money</p>
           </div>
-          <button onClick={onClose}
+          <button
+            onClick={onClose}
             className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 text-slate-400 hover:bg-slate-50"
           >
             <X className="h-4 w-4" />
@@ -225,9 +246,9 @@ function ChangePinModal({ onClose }: { onClose: () => void }) {
           ) : (
             <>
               {[
-                { key: "current", label: "Current PIN",  placeholder: "••••" },
-                { key: "newPin",  label: "New PIN",      placeholder: "4 digits" },
-                { key: "confirm", label: "Confirm PIN",  placeholder: "4 digits" },
+                { key: "current", label: "Current PIN", placeholder: "••••"    },
+                { key: "newPin",  label: "New PIN",     placeholder: "4 digits" },
+                { key: "confirm", label: "Confirm PIN", placeholder: "4 digits" },
               ].map(({ key, label, placeholder }) => (
                 <div key={key}>
                   <p className="text-[11px] font-semibold text-slate-500 mb-1">{label}</p>
@@ -248,15 +269,15 @@ function ChangePinModal({ onClose }: { onClose: () => void }) {
                 </p>
               )}
               <div className="flex gap-2 pt-2">
-                <Button variant="outline" onClick={onClose}
+                <Button variant="outline" onClick={onClose} disabled={loading}
                   className="flex-1 h-10 rounded-xl border-slate-200 text-sm font-semibold"
                 >
                   Cancel
                 </Button>
-                <Button onClick={handleSubmit}
-                  className="flex-1 h-10 rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 text-white text-sm font-bold shadow-md shadow-blue-600/20"
+                <Button onClick={handleSubmit} disabled={loading}
+                  className="flex-1 h-10 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-bold shadow-md shadow-blue-600/20"
                 >
-                  Update PIN
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Update PIN"}
                 </Button>
               </div>
             </>
@@ -267,324 +288,436 @@ function ChangePinModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+/* ── Edit Name Modal ── */
+function EditNameModal({
+  currentName,
+  onClose,
+  onSave,
+}: {
+  currentName: string;
+  onClose: () => void;
+  onSave: (name: string) => void;
+}) {
+  const [value, setValue]     = useState(currentName);
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState("");
 
-export function ProfilePage() {
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [showPinModal,      setShowPinModal]      = useState(false);
-  const [editName,          setEditName]          = useState(false);
-  const [nameValue,         setNameValue]         = useState(USER.full_name);
-  const fileRef = useRef<HTMLInputElement>(null);
-
-  const initials = USER.full_name.split(" ").map(s => s[0]).join("");
-  const joinDate  = new Date(USER.created_at).toLocaleDateString("en-PK", {
-    year: "numeric", month: "long", day: "numeric"
-  });
-  const lastLogin = new Date(USER.last_login).toLocaleDateString("en-PK", {
-    year: "numeric", month: "short", day: "numeric",
-    hour: "2-digit", minute: "2-digit"
-  });
+  const handleSave = async () => {
+    if (!value.trim()) { setError("Name cannot be empty."); return; }
+    setLoading(true);
+    setError("");
+    try {
+      // Adjust endpoint if your backend has a profile update route
+      await (authApi as any).updateProfile?.({ full_name: value.trim() });
+      onSave(value.trim());
+      onClose();
+    } catch (e: any) {
+      setError(e?.response?.data?.message ?? "Failed to update name.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50 font-sans">
-
-      {/* ── sidebar ── */}
-      <aside className="hidden md:flex w-64 flex-col bg-white border-r border-slate-100 shadow-sm">
-        <div className="flex h-16 items-center gap-3 border-b border-slate-100 px-5">
-          <LogoMark size={34} />
-          <div className="leading-none">
-            <p className="text-[16px] font-bold text-slate-900">Safe<span className="text-blue-600">Pay</span></p>
-            <p className="text-[10px] font-medium uppercase tracking-widest text-slate-400">Pakistan</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+      <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+          <p className="text-sm font-bold text-slate-900">Edit Display Name</p>
+          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 text-slate-400 hover:bg-slate-50">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="p-5 space-y-3">
+          <input
+            autoFocus
+            value={value}
+            onChange={e => setValue(e.target.value)}
+            className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            placeholder="Your full name"
+          />
+          {error && (
+            <p className="text-[11px] font-medium text-rose-600 flex items-center gap-1">
+              <AlertTriangle className="h-3 w-3" /> {error}
+            </p>
+          )}
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onClose} disabled={loading} className="flex-1 h-10 rounded-xl border-slate-200 text-sm font-semibold">
+              Cancel
+            </Button>
+            <Button onClick={handleSave} disabled={loading} className="flex-1 h-10 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-bold">
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+            </Button>
           </div>
         </div>
-        <nav className="flex-1 px-3 py-4 space-y-0.5">
-          {[
-            { label: "Dashboard",     to: "/dashboard",     icon: LayoutDashboard },
-            { label: "Send Money",    to: "/send",          icon: Send            },
-            { label: "Wallet",        to: "/wallet",        icon: Wallet          },
-            { label: "History",       to: "/history",       icon: CreditCard      },
-            { label: "Notifications", to: "/notification", icon: Bell            },
-            { label: "Profile",       to: "/profile",       icon: User  , active: true },
-            { label: "Settings",      to: "/settings",      icon: Settings        },
-          ].map(({ label, to, icon: Icon, active }) => (
-            <Link key={label} to={to}
-              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all
-                ${active
-                  ? "bg-linear-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/25"
-                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                }`}
-            >
-              <Icon className="h-4 w-4 shrink-0" />
-              {label}
-            </Link>
-          ))}
-        </nav>
-        <div className="border-t border-slate-100 p-4">
-          <div className="flex items-center gap-3 rounded-xl bg-blue-50 border border-blue-100 p-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-linear-to-br from-blue-500 to-indigo-600 text-xs font-bold text-white">
-              {initials}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-slate-800">{USER.full_name}</p>
-              <p className="truncate text-[11px] text-blue-600 font-medium">View profile</p>
-            </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Skeleton ── */
+function ProfileSkeleton() {
+  return (
+    <div className="mx-auto max-w-2xl space-y-5 animate-pulse">
+      <div className="rounded-2xl bg-slate-200 h-44" />
+      <div className="rounded-2xl bg-white border border-slate-100 p-5 space-y-3">
+        {[1,2,3,4,5].map(i => (
+          <div key={i} className="flex justify-between py-2">
+            <div className="h-3 w-20 rounded bg-slate-100" />
+            <div className="h-3 w-32 rounded bg-slate-100" />
           </div>
-        </div>
-      </aside>
+        ))}
+      </div>
+      <div className="rounded-2xl bg-white border border-slate-100 h-40" />
+      <div className="rounded-2xl bg-slate-100 h-20" />
+    </div>
+  );
+}
 
-      {/* ── main ── */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+/* ══════════════════════════════════════════
+   PROFILE PAGE
+══════════════════════════════════════════ */
+export function ProfilePage() {
+  const navigate  = useNavigate();
+  const logout    = useAuthStore(s => s.logout);
+  const fileRef   = useRef<HTMLInputElement>(null);
 
-        {/* topbar */}
-        <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-100 bg-white px-5 shadow-sm">
-          <div>
-            <h1 className="text-base font-bold text-slate-900">My Profile</h1>
-            <p className="text-[11px] text-slate-400">Manage your account information</p>
-          </div>
-        </header>
+  /* ── Data state ── */
+  const [user,    setUser]    = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState<string | null>(null);
 
-        <main className="flex-1 overflow-y-auto p-5 md:p-7">
-          <div className="mx-auto max-w-2xl space-y-5">
+  /* ── UI state ── */
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showPinModal,      setShowPinModal]      = useState(false);
+  const [showNameModal,     setShowNameModal]      = useState(false);
+  const [displayName,       setDisplayName]        = useState("");
 
-            {/* ── avatar + name hero ── */}
-            <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-slate-900 via-blue-900 to-indigo-900 p-6 text-white shadow-xl shadow-blue-900/30">
-              <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/5" />
-              <div className="absolute -bottom-4 right-20 h-16 w-16 rounded-full bg-white/5" />
-              <div className="relative flex items-center gap-5">
+  /* ── Fetch profile ── */
+  const fetchProfile = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res: any = await authApi.me();
+      const u: UserProfile = res.data?.data?.user ?? res.data?.data ?? res.data;
+      setUser(u);
+      setDisplayName(u.full_name);
+    } catch (e: any) {
+      setError(e?.response?.data?.message ?? e?.message ?? "Failed to load profile.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-                {/* avatar */}
-                <div className="relative">
-                  <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-linear-to-br from-blue-400 to-indigo-500 text-2xl font-black text-white shadow-lg">
-                    {initials}
-                  </div>
-                  <button
-                    onClick={() => fileRef.current?.click()}
-                    className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-xl bg-white text-blue-600 shadow-md hover:bg-blue-50 transition-colors"
-                  >
-                    <Camera className="h-3.5 w-3.5" />
-                  </button>
-                  <input ref={fileRef} type="file" accept="image/*" className="hidden" />
-                </div>
+  useEffect(() => { fetchProfile(); }, [fetchProfile]);
 
-                {/* name + status */}
-                <div className="flex-1 min-w-0">
-                  {editName ? (
-                    <div className="flex items-center gap-2">
-                      <input
-                        autoFocus
-                        value={nameValue}
-                        onChange={e => setNameValue(e.target.value)}
-                        className="h-9 flex-1 rounded-xl bg-white/10 border border-white/20 px-3 text-sm font-bold text-white placeholder:text-blue-200 focus:outline-none focus:ring-2 focus:ring-white/30"
-                      />
-                      <button
-                        onClick={() => setEditName(false)}
-                        className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500 text-white hover:bg-emerald-600"
-                      >
-                        <Check className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => { setNameValue(USER.full_name); setEditName(false); }}
-                        className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-white hover:bg-white/20"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
+  /* ── Logout ── */
+  const handleLogout = async () => {
+    try { await authApi.logout(); } catch { /* ignore */ }
+    logout();
+    navigate({ to: "/sign-in" });
+  };
+
+  /* ── Derived ── */
+  const initials = displayName
+    ? displayName.split(" ").map((s: string) => s[0]).join("").slice(0, 2).toUpperCase()
+    : "??";
+
+  const joinDate = user
+    ? new Date(user.created_at).toLocaleDateString("en-PK", {
+        year: "numeric", month: "long", day: "numeric",
+      })
+    : "";
+
+  const lastLogin = user
+    ? new Date(user.last_login).toLocaleDateString("en-PK", {
+        year: "numeric", month: "short", day: "numeric",
+        hour: "2-digit", minute: "2-digit",
+      })
+    : "";
+
+  const walletBalance = user
+    ? parseFloat(user.wallet.balance).toLocaleString()
+    : "0";
+
+  /* ── Header right ── */
+  const headerRight = (
+    <button
+      onClick={fetchProfile}
+      disabled={loading}
+      className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 transition-colors disabled:opacity-40"
+      title="Refresh"
+    >
+      <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+    </button>
+  );
+
+  return (
+    <>
+      <AppLayout
+        title="My Profile"
+        subtitle="Manage your account information"
+        headerRight={headerRight}
+      >
+        <div className="p-5 md:p-7">
+          {/* Loading */}
+          {loading && <ProfileSkeleton />}
+
+          {/* Error */}
+          {error && !loading && (
+            <div className="flex flex-col items-center justify-center py-24 gap-3">
+              <AlertCircle className="h-8 w-8 text-rose-400" />
+              <p className="text-sm font-medium text-slate-600">{error}</p>
+              <button
+                onClick={fetchProfile}
+                className="flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700"
+              >
+                <RefreshCw className="h-3.5 w-3.5" /> Retry
+              </button>
+            </div>
+          )}
+
+          {/* Content */}
+          {!loading && !error && user && (
+            <div className="mx-auto max-w-2xl space-y-5">
+
+              {/* ── Avatar + name hero ── */}
+              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 p-6 text-white shadow-xl shadow-blue-900/30">
+                <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/5" />
+                <div className="absolute -bottom-4 right-20 h-16 w-16 rounded-full bg-white/5" />
+                <div className="relative flex items-center gap-5">
+                  {/* Avatar */}
+                  <div className="relative">
+                    <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-400 to-indigo-500 text-2xl font-black text-white shadow-lg overflow-hidden">
+                      {user.avatar_url ? (
+                        <img src={user.avatar_url} alt={displayName} className="h-full w-full object-cover" />
+                      ) : (
+                        initials
+                      )}
                     </div>
-                  ) : (
+                    <button
+                      onClick={() => fileRef.current?.click()}
+                      className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-xl bg-white text-blue-600 shadow-md hover:bg-blue-50 transition-colors"
+                    >
+                      <Camera className="h-3.5 w-3.5" />
+                    </button>
+                    <input ref={fileRef} type="file" accept="image/*" className="hidden" />
+                  </div>
+
+                  {/* Name + status */}
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-xl font-black text-white">{nameValue}</p>
+                      <p className="text-xl font-black text-white truncate">{displayName}</p>
                       <button
-                        onClick={() => setEditName(true)}
-                        className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 text-blue-200 hover:bg-white/20 transition-colors"
+                        onClick={() => setShowNameModal(true)}
+                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10 text-blue-200 hover:bg-white/20 transition-colors"
                       >
                         <Edit2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
-                  )}
-                  <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                    <span className="flex items-center gap-1 rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300">
-                      <BadgeCheck className="h-3 w-3" /> Verified
-                    </span>
-                    <span className="rounded-full bg-blue-500/20 px-2.5 py-0.5 text-[10px] font-bold text-blue-200 uppercase tracking-widest">
-                      {USER.role}
-                    </span>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                      {user.is_verified && (
+                        <span className="flex items-center gap-1 rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300">
+                          <BadgeCheck className="h-3 w-3" /> Verified
+                        </span>
+                      )}
+                      {user.is_frozen && (
+                        <span className="flex items-center gap-1 rounded-full bg-rose-500/20 px-2.5 py-0.5 text-[10px] font-bold text-rose-300">
+                          Frozen
+                        </span>
+                      )}
+                      <span className="rounded-full bg-blue-500/20 px-2.5 py-0.5 text-[10px] font-bold text-blue-200 uppercase tracking-widest">
+                        {user.role}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-[11px] text-blue-200">Member since {joinDate}</p>
                   </div>
-                  <p className="mt-2 text-[11px] text-blue-200">Member since {joinDate}</p>
                 </div>
               </div>
-            </div>
 
-            {/* ── account info ── */}
-            <div className="rounded-2xl border border-slate-100 bg-white shadow-sm">
-              <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-                <div className="flex items-center gap-2">
+              {/* ── Account info ── */}
+              <div className="rounded-2xl border border-slate-100 bg-white shadow-sm">
+                <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4">
                   <User className="h-4 w-4 text-slate-500" />
                   <p className="text-sm font-bold text-slate-800">Account Information</p>
                 </div>
-              </div>
-              <div className="px-5 py-2">
-                <InfoRow label="Full Name"  value={nameValue} />
-                <InfoRow label="User ID"    value={USER.id}    mono copyable />
-                <InfoRow label="Role"       value={USER.role}  />
-                <InfoRow label="Joined"     value={joinDate}   />
-                <InfoRow label="Last Login" value={lastLogin}  />
-              </div>
-            </div>
-
-            {/* ── contact info ── */}
-            <div className="rounded-2xl border border-slate-100 bg-white shadow-sm">
-              <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4">
-                <Phone className="h-4 w-4 text-slate-500" />
-                <p className="text-sm font-bold text-slate-800">Contact Details</p>
-              </div>
-              <div className="divide-y divide-slate-50 px-5">
-
-                {/* phone */}
-                <div className="flex items-center justify-between py-3.5">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100">
-                      <Phone className="h-4 w-4 text-emerald-600" />
-                    </div>
-                    <div>
-                      <p className="text-[11px] text-slate-400">Phone Number</p>
-                      <p className="text-sm font-semibold text-slate-800">{USER.phone}</p>
-                    </div>
-                  </div>
-                  <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
-                    <BadgeCheck className="h-3 w-3" /> Verified
-                  </span>
+                <div className="px-5 py-2">
+                  <InfoRow label="Full Name"  value={displayName}   />
+                  <InfoRow label="User ID"    value={user.id}       mono copyable />
+                  <InfoRow label="Role"       value={user.role}     />
+                  <InfoRow label="Joined"     value={joinDate}      />
+                  <InfoRow label="Last Login" value={lastLogin}     />
                 </div>
+              </div>
 
-                {/* email */}
-                <div className="flex items-center justify-between py-3.5">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100">
-                      <Mail className="h-4 w-4 text-blue-600" />
+              {/* ── Contact info ── */}
+              <div className="rounded-2xl border border-slate-100 bg-white shadow-sm">
+                <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4">
+                  <Phone className="h-4 w-4 text-slate-500" />
+                  <p className="text-sm font-bold text-slate-800">Contact Details</p>
+                </div>
+                <div className="divide-y divide-slate-50 px-5">
+                  {/* Phone */}
+                  <div className="flex items-center justify-between py-3.5">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100">
+                        <Phone className="h-4 w-4 text-emerald-600" />
+                      </div>
+                      <div>
+                        <p className="text-[11px] text-slate-400">Phone Number</p>
+                        <p className="text-sm font-semibold text-slate-800">{user.phone}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-[11px] text-slate-400">Email Address</p>
-                      <p className="text-sm font-semibold text-slate-800">{USER.email}</p>
-                    </div>
-                  </div>
-                  {USER.is_email_verified ? (
                     <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
                       <BadgeCheck className="h-3 w-3" /> Verified
                     </span>
-                  ) : (
-                    <button className="flex items-center gap-1 rounded-xl bg-blue-600 px-3 py-1.5 text-[10px] font-bold text-white hover:bg-blue-700 transition-colors">
-                      Verify email
-                    </button>
+                  </div>
+
+                  {/* Email */}
+                  <div className="flex items-center justify-between py-3.5">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100">
+                        <Mail className="h-4 w-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-[11px] text-slate-400">Email Address</p>
+                        <p className="text-sm font-semibold text-slate-800">{user.email}</p>
+                      </div>
+                    </div>
+                    {user.is_email_verified ? (
+                      <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
+                        <BadgeCheck className="h-3 w-3" /> Verified
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => authApi.sendOtp("email")}
+                        className="flex items-center gap-1 rounded-xl bg-blue-600 px-3 py-1.5 text-[10px] font-bold text-white hover:bg-blue-700 transition-colors"
+                      >
+                        Verify email
+                      </button>
+                    )}
+                  </div>
+
+                  {/* CNIC — only show if returned by API */}
+                  {user.cnic && (
+                    <div className="flex items-center justify-between py-3.5">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100">
+                          <Shield className="h-4 w-4 text-slate-600" />
+                        </div>
+                        <div>
+                          <p className="text-[11px] text-slate-400">CNIC</p>
+                          <p className="text-sm font-semibold font-mono text-slate-800">
+                            {user.cnic.replace(/(\d{5})-(\d{4})\d{3}-(\d{1})/, "$1-****$2-$3")}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-500">
+                        Masked
+                      </span>
+                    </div>
                   )}
                 </div>
+              </div>
 
-                {/* cnic */}
-                <div className="flex items-center justify-between py-3.5">
+              {/* ── Wallet snapshot ── */}
+              <div className="rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50 p-5">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100">
-                      <Shield className="h-4 w-4 text-slate-600" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 shadow-md shadow-blue-600/20">
+                      <Wallet className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <p className="text-[11px] text-slate-400">CNIC</p>
-                      <p className="text-sm font-semibold font-mono text-slate-800">
-                        {USER.cnic.replace(/(\d{5})-(\d{4})\d{3}-(\d{1})/, "$1-****$2-$3")}
+                      <p className="text-[11px] text-blue-600 font-medium">
+                        Wallet Balance · {user.wallet.currency}
+                      </p>
+                      <p className="text-xl font-black text-blue-900">
+                        Rs. {walletBalance}
                       </p>
                     </div>
                   </div>
-                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-500">
-                    Masked
-                  </span>
+                  <Link to="/wallet">
+                    <Button className="h-9 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-md shadow-blue-600/20 hover:bg-blue-700">
+                      View Wallet
+                    </Button>
+                  </Link>
                 </div>
               </div>
-            </div>
 
-            {/* ── wallet snapshot ── */}
-            <div className="rounded-2xl border border-blue-100 bg-linear-to-r from-blue-50 to-indigo-50 p-5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 shadow-md shadow-blue-600/20">
-                    <Wallet className="h-5 w-5 text-white" />
-                  </div>
+              {/* ── Security ── */}
+              <div className="rounded-2xl border border-slate-100 bg-white shadow-sm">
+                <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4">
+                  <Lock className="h-4 w-4 text-slate-500" />
+                  <p className="text-sm font-bold text-slate-800">Security</p>
+                </div>
+                <div className="divide-y divide-slate-50">
+                  <button
+                    onClick={() => setShowPasswordModal(true)}
+                    className="flex w-full items-center justify-between px-5 py-4 hover:bg-slate-50 transition-colors group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 group-hover:bg-blue-100 transition-colors">
+                        <KeyRound className="h-4 w-4 text-slate-500 group-hover:text-blue-600 transition-colors" />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-sm font-semibold text-slate-800">Change Password</p>
+                        <p className="text-[11px] text-slate-400">Update your login password</p>
+                      </div>
+                    </div>
+                    <Edit2 className="h-4 w-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
+                  </button>
+                  <button
+                    onClick={() => setShowPinModal(true)}
+                    className="flex w-full items-center justify-between px-5 py-4 hover:bg-slate-50 transition-colors group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 group-hover:bg-blue-100 transition-colors">
+                        <Shield className="h-4 w-4 text-slate-500 group-hover:text-blue-600 transition-colors" />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-sm font-semibold text-slate-800">Change Transaction PIN</p>
+                        <p className="text-[11px] text-slate-400">4-digit PIN used to send money</p>
+                      </div>
+                    </div>
+                    <Edit2 className="h-4 w-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
+                  </button>
+                </div>
+              </div>
+
+              {/* ── Danger zone ── */}
+              <div className="rounded-2xl border border-rose-100 bg-rose-50 p-5">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-rose-400 mb-3">
+                  Danger Zone
+                </p>
+                <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[11px] text-blue-600 font-medium">Wallet Balance</p>
-                    <p className="text-xl font-black text-blue-900">
-                      Rs. {USER.wallet_balance.toLocaleString()}
-                    </p>
+                    <p className="text-sm font-bold text-rose-800">Log Out</p>
+                    <p className="text-[11px] text-rose-500">Sign out from this device</p>
                   </div>
-                </div>
-                <Link to="/wallet">
-                  <Button className="h-9 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-md shadow-blue-600/20 hover:bg-blue-700">
-                    View Wallet
+                  <Button
+                    variant="outline"
+                    onClick={handleLogout}
+                    className="h-9 rounded-xl border-rose-300 text-rose-600 text-xs font-bold hover:bg-rose-100 hover:border-rose-400"
+                  >
+                    <LogOut className="mr-1.5 h-3.5 w-3.5" /> Log Out
                   </Button>
-                </Link>
-              </div>
-            </div>
-
-            {/* ── security ── */}
-            <div className="rounded-2xl border border-slate-100 bg-white shadow-sm">
-              <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4">
-                <Lock className="h-4 w-4 text-slate-500" />
-                <p className="text-sm font-bold text-slate-800">Security</p>
-              </div>
-              <div className="divide-y divide-slate-50">
-
-                {/* change password */}
-                <button
-                  onClick={() => setShowPasswordModal(true)}
-                  className="flex w-full items-center justify-between px-5 py-4 hover:bg-slate-50 transition-colors group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 group-hover:bg-blue-100 transition-colors">
-                      <KeyRound className="h-4 w-4 text-slate-500 group-hover:text-blue-600 transition-colors" />
-                    </div>
-                    <div className="text-left">
-                      <p className="text-sm font-semibold text-slate-800">Change Password</p>
-                      <p className="text-[11px] text-slate-400">Update your login password</p>
-                    </div>
-                  </div>
-                  <Edit2 className="h-4 w-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
-                </button>
-
-                {/* change pin */}
-                <button
-                  onClick={() => setShowPinModal(true)}
-                  className="flex w-full items-center justify-between px-5 py-4 hover:bg-slate-50 transition-colors group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 group-hover:bg-blue-100 transition-colors">
-                      <Shield className="h-4 w-4 text-slate-500 group-hover:text-blue-600 transition-colors" />
-                    </div>
-                    <div className="text-left">
-                      <p className="text-sm font-semibold text-slate-800">Change Transaction PIN</p>
-                      <p className="text-[11px] text-slate-400">4-digit PIN used to send money</p>
-                    </div>
-                  </div>
-                  <Edit2 className="h-4 w-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
-                </button>
-              </div>
-            </div>
-
-            {/* ── danger zone ── */}
-            <div className="rounded-2xl border border-rose-100 bg-rose-50 p-5">
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-rose-400 mb-3">Danger Zone</p>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-bold text-rose-800">Log Out</p>
-                  <p className="text-[11px] text-rose-500">Sign out from this device</p>
                 </div>
-                <Button
-                  variant="outline"
-                  className="h-9 rounded-xl border-rose-300 text-rose-600 text-xs font-bold hover:bg-rose-100 hover:border-rose-400"
-                >
-                  <LogOut className="mr-1.5 h-3.5 w-3.5" /> Log Out
-                </Button>
               </div>
+
             </div>
+          )}
+        </div>
+      </AppLayout>
 
-          </div>
-        </main>
-      </div>
-
-      {/* ── modals ── */}
+      {/* ── Modals ── */}
       {showPasswordModal && <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />}
       {showPinModal      && <ChangePinModal      onClose={() => setShowPinModal(false)}      />}
-    </div>
+      {showNameModal     && user && (
+        <EditNameModal
+          currentName={displayName}
+          onClose={() => setShowNameModal(false)}
+          onSave={(name) => setDisplayName(name)}
+        />
+      )}
+    </>
   );
 }

@@ -101,4 +101,20 @@ const markAllRead = AsyncHandler(async (req, res) => {
   );
 });
 
-export { getNotifications, markOneRead, markAllRead };
+
+const deleteOne = AsyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const notif = await prisma.notification.findUnique({ where: { id } });
+  if (!notif) {
+    throw new ApiError(404, "Notification not found.", { code: "NOT_FOUND" });
+  }
+  if (notif.user_id !== req.user.id) {
+    throw new ApiError(403, "Forbidden.", { code: "FORBIDDEN" });
+  }
+  await prisma.notification.delete({ where: { id } });
+  return res.status(200).json(
+    new ApiResponse(200, null, "Notification deleted successfully.")
+  );
+}); 
+
+export { getNotifications, markOneRead, markAllRead, deleteOne };

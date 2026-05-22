@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LandingPage } from "@/components/sections/LandingPage";
-
+import { requireGuest } from "@/lib/guards";
+  
 export const Route = createFileRoute("/")({
+   beforeLoad: requireGuest,
   component: LandingPage,
   head: () => ({
     meta: [
