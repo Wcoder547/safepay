@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Bell, Menu } from "lucide-react";
-import { Sidebar, LogoMark } from "@/components/Sidebar";
+import { Sidebar} from "@/components/Sidebar";
 import { useNotifications } from "@/hooks/useNotifications";
 import useAuthStore from "@/store/auth.store";
 
@@ -9,7 +9,7 @@ interface AppLayoutProps {
   children:    React.ReactNode;
   title?:      string;
   subtitle?:   string;
-  headerRight?: React.ReactNode; // custom header right content per page
+  headerRight?: React.ReactNode; 
 }
 
 export function AppLayout({
