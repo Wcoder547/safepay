@@ -8,6 +8,12 @@
     "dev": "node --watch src/index.js",
     "start": "node src/index.js"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/engines",
+      "prisma"
+    ]
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",

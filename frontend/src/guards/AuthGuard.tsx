@@ -4,7 +4,7 @@ import useAuthStore from "@/store/auth.store";
 import { authApi } from "@/api/endpoints/auth.api";
 
 
-const PUBLIC_ONLY_ROUTES = ["/sign-in", "/sign-up", "/verify-phone", "/forgot-password", "/reset-password"];
+const PUBLIC_ONLY_ROUTES = ["/sign-in", "/sign-up", "/verify_phone", "/forgot-password", "/reset-password"];
 
 
 const PROTECTED_ROUTES   = ["/dashboard", "/wallet", "/send", "/history", "/notifications", "/profile", "/settings", "/sendMoney"];
@@ -56,11 +56,11 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       }
 
       
-      const isVerifyPage = pathname === "/verify-phone";
+      const isVerifyPage = pathname === "/verify_phone";
       if (isLoggedIn && !user?.is_verified && !isVerifyPage) {
         const isProtected = PROTECTED_ROUTES.some((r) => pathname.startsWith(r));
         if (isProtected) {
-          navigate({ to: "/verify-phone" });
+          navigate({ to: "/verify_phone" });
         }
         return;
       }

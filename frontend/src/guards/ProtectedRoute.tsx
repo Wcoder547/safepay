@@ -22,7 +22,7 @@ export function ProtectedRoute({ children, requireAdmin = false }: Props) {
           return;
         }
         if (!user.is_verified) {
-          navigate({ to: "/verify-phone" });
+          navigate({ to: "/verify_phone" });
           return;
         }
         setChecking(false);
@@ -43,7 +43,7 @@ export function ProtectedRoute({ children, requireAdmin = false }: Props) {
           return;
         }
         if (!fetchedUser.is_verified) {
-          navigate({ to: "/verify-phone" });
+          navigate({ to: "/verify_phone" });
           return;
         }
 

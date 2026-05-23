@@ -11,7 +11,7 @@ export const requireAuth = async () => {
 
  
   if (isLoggedIn && !user?.is_verified) {
-    throw redirect({ to: "/verify-phone" });
+    throw redirect({ to: "/verify_phone" });
   }
 
   
@@ -23,7 +23,7 @@ export const requireAuth = async () => {
     setAuth(fetchedUser, data.data.access_token);
 
     if (!fetchedUser.is_verified) {
-      throw redirect({ to: "/verify-phone" });
+      throw redirect({ to: "/verify_phone" });
     }
 
   } catch {
@@ -49,7 +49,7 @@ export const requireGuest = async () => {
   if (!isLoggedIn) return; 
   
   if (!user?.is_verified) {
-    throw redirect({ to: "/verify-phone" });
+    throw redirect({ to: "/verify_phone" });
   }
 
   

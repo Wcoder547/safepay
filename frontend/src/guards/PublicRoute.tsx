@@ -15,7 +15,7 @@ export function PublicRoute({ children }: Props) {
     if (!isLoggedIn) return;
 
     if (!user?.is_verified) {
-      navigate({ to: "/verify-phone" });
+      navigate({ to: "/verify_phone" });
       return;
     }
 
