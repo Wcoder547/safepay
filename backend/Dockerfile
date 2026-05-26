@@ -16,6 +16,7 @@ WORKDIR /app
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/src          ./src
 COPY package.json ./
+COPY --chown=safepay:safepay docker-entrypoint.sh ./
 COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
 ENV NODE_ENV=production

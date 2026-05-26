@@ -51,7 +51,7 @@ services:
       dockerfile: Dockerfile
     container_name: safepay-backend
     env_file:
-      - ./backend/.env )
+      - ./backend/.env
     environment:
       DATABASE_URL: postgresql://safepay_user:safepay_pass@postgres:5432/safepay
 
