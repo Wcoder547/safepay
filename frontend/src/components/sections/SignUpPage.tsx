@@ -91,12 +91,12 @@ export function SignUpPage() {
 const getApiErrorMessage = (): string | null => {
   if (!error) return null;
   const data = (error as any)?.response?.data;
-  const apiError = data?.error;
+  const apiError = data?.errors ?? data?.error;  
   if (apiError?.fields) {
     return Object.values(apiError.fields)[0] as string;
   }
   return apiError?.message || data?.message || "Something went wrong. Please try again.";
-}
+};
   const isFormValid =
     !VALIDATORS.full_name(form.full_name) &&
     !VALIDATORS.email(form.email) &&
