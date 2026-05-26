@@ -3,10 +3,10 @@ import { useNavigate } from "@tanstack/react-router";
 import {
   Bell, CreditCard, Globe, Lock,
   Moon, Shield, Smartphone,
-  Sun, Wallet, X, AlertTriangle,
+  Sun, Wallet, X, 
   Eye, EyeOff, Monitor, Trash2,
   LogOut, Languages, Loader2, RefreshCw,
-  AlertCircle, Clock, MapPin, Wifi,
+  AlertCircle, Clock,  Wifi,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AppLayout } from "@/components/AppLayout";
@@ -95,64 +95,75 @@ function Section({
   );
 }
 
-/* ── Delete Account Modal ── */
+
 function DeleteModal({ onClose }: { onClose: () => void }) {
   const [input, setInput] = useState("");
   const confirmed = input === "DELETE";
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-          <div>
-            <p className="text-sm font-bold text-rose-700">Delete Account</p>
-            <p className="text-[11px] text-slate-400">This action is irreversible</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+      <div className="w-full max-w-xs rounded-3xl bg-white shadow-2xl overflow-hidden">
+
+        {/* Header */}
+        <div className="relative bg-rose-600 px-6 pt-7 pb-6 text-white">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 mb-4">
+            <Trash2 className="h-5 w-5 text-white" />
           </div>
-          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 text-slate-400 hover:bg-slate-50">
-            <X className="h-4 w-4" />
+          <p className="text-base font-black tracking-tight">Delete Account</p>
+          <p className="text-[12px] text-rose-200 mt-0.5 font-medium">
+            This cannot be undone
+          </p>
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 flex h-7 w-7 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25 transition-colors"
+          >
+            <X className="h-3.5 w-3.5" />
           </button>
         </div>
-        <div className="p-5">
-          <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-4">
-            <div className="flex items-start gap-2">
-              <AlertTriangle className="h-4 w-4 text-rose-600 mt-0.5 shrink-0" />
-              <div>
-                <p className="text-xs font-bold text-rose-800 mb-1">Warning — This cannot be undone</p>
-                <ul className="text-[11px] text-rose-600 space-y-1">
-                  <li>• Your wallet balance will be forfeited</li>
-                  <li>• All transaction history will be deleted</li>
-                  <li>• Your account cannot be recovered</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-            <p className="text-[11px] font-medium text-amber-700">
-              Account deletion is not yet available. Contact{" "}
-              <span className="font-bold">support@safepay.pk</span> to request removal.
-            </p>
-          </div>
-          <p className="text-[11px] text-slate-500 mb-2">
-            Type <span className="font-bold font-mono text-rose-600">DELETE</span> to confirm
+
+        {/* Body */}
+        <div className="px-6 py-5 space-y-4">
+          {/* Info note */}
+          <p className="text-[12px] leading-relaxed text-slate-500">
+            To request account removal, contact{" "}
+            <span className="font-bold text-slate-700">support@safepay.pk</span>.
+            Wallet balance and transaction history will be permanently erased.
           </p>
-          <input
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            placeholder="Type DELETE here"
-            className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-mono text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/20 mb-4"
-          />
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose} className="flex-1 h-10 rounded-xl border-slate-200 text-sm font-semibold">
+
+          {/* Confirm input */}
+          <div className="space-y-1.5">
+            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+              Type <span className="text-rose-500 font-black">DELETE</span> to confirm
+            </p>
+            <input
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              placeholder="DELETE"
+              className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-mono font-semibold text-slate-800 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-300 transition-colors"
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-2 pt-1">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="flex-1 h-11 rounded-2xl border-slate-200 text-sm font-semibold text-slate-600"
+            >
               Cancel
             </Button>
             <Button
               disabled={!confirmed}
-              onClick={() => { window.location.href = "mailto:support@safepay.pk?subject=Account Deletion Request"; }}
-              className="flex-1 h-10 rounded-xl bg-rose-600 text-white text-sm font-bold hover:bg-rose-700 disabled:opacity-40 shadow-md shadow-rose-600/20"
+              onClick={() => {
+                window.location.href = "mailto:support@safepay.pk?subject=Account Deletion Request";
+              }}
+              className="flex-1 h-11 rounded-2xl bg-rose-600 text-white text-sm font-bold hover:bg-rose-700 disabled:opacity-30 shadow-lg shadow-rose-600/25 transition-all"
             >
-              <Trash2 className="mr-1.5 h-4 w-4" /> Contact Support
+              Contact Support
             </Button>
           </div>
         </div>
+
       </div>
     </div>
   );

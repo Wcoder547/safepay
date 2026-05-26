@@ -122,7 +122,7 @@ export function Hero() {
             <div className="mt-5">
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-xs font-semibold text-slate-700">Recent activity</p>
-                <a href="#" className="text-[11px] font-medium text-blue-600">View all</a>
+                <a href="/sign-in" className="text-[11px] font-medium text-blue-600">View all</a>
               </div>
               <ul className="space-y-2.5">
                 {[["Ahmed Khan","2:45 PM","-Rs. 2,000","text-rose-600","from-blue-100 to-blue-200 text-blue-700"],["Sara Ali","1:12 PM","+Rs. 5,500","text-emerald-600","from-emerald-100 to-emerald-200 text-emerald-700"],["Bilal Shah","11:30 AM","-Rs. 1,200","text-rose-600","from-amber-100 to-orange-200 text-amber-700"]].map(([n,time,a,c,av]) => (

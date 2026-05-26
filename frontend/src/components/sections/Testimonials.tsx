@@ -7,7 +7,7 @@ export function Testimonials() {
     { q: "Finally a payment app that actually explains why a transaction was blocked. Transparent, honest, and trustworthy.", n: "Bilal Raza", l: "Islamabad, Pakistan", i: "BR", c: "from-amber-500 to-orange-600" },
   ];
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-white to-slate-50 py-28">
+    <section className="relative overflow-hidden bg-linear-to-b from-white to-slate-50 py-28">
       <div className="mx-auto max-w-7xl px-6">
         <div className="mx-auto max-w-2xl text-center">
           <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-blue-700">
@@ -23,7 +23,7 @@ export function Testimonials() {
               </div>
               <p className="mt-4 text-base leading-relaxed text-slate-700">"{t.q}"</p>
               <div className="mt-7 flex items-center gap-3 border-t border-slate-100 pt-5">
-                <div className={`flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br text-sm font-semibold text-white shadow ${t.c}`}>{t.i}</div>
+                <div className={`flex h-11 w-11 items-center justify-center rounded-full bg-linear-to-br text-sm font-semibold text-white shadow ${t.c}`}>{t.i}</div>
                 <div><p className="text-sm font-semibold text-slate-900">{t.n}</p><p className="text-xs text-slate-500">{t.l}</p></div>
               </div>
             </div>

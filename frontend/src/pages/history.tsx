@@ -575,7 +575,7 @@ export function HistoryPage() {
                     >
                       {/* Contact */}
                       <div className="flex items-center gap-3">
-                        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${txn.avatar} text-[10px] font-bold text-white shadow-sm`}>
+                        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-linear-to-br ${txn.avatar} text-[10px] font-bold text-white shadow-sm`}>
                           {initials(txn.name)}
                         </div>
                         <div className="min-w-0">

@@ -1,10 +1,25 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
-  BadgeCheck, AlertTriangle, Camera, Check,
-  Copy, Edit2, Eye, EyeOff, KeyRound,
-  Lock, LogOut, Mail, Phone,
-  Shield, User, Wallet, X, Loader2, RefreshCw,
+  BadgeCheck,
+  AlertTriangle,
+  Camera,
+  Check,
+  Copy,
+  Edit2,
+  Eye,
+  EyeOff,
+  KeyRound,
+  Lock,
+  LogOut,
+  Mail,
+  Phone,
+  Shield,
+  User,
+  Wallet,
+  X,
+  Loader2,
+  RefreshCw,
   AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -35,9 +50,15 @@ interface UserProfile {
 
 /* ── InfoRow ── */
 function InfoRow({
-  label, value, mono = false, copyable = false,
+  label,
+  value,
+  mono = false,
+  copyable = false,
 }: {
-  label: string; value: string; mono?: boolean; copyable?: boolean;
+  label: string;
+  value: string;
+  mono?: boolean;
+  copyable?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
   const copy = () => {
@@ -47,9 +68,13 @@ function InfoRow({
   };
   return (
     <div className="flex items-center justify-between py-3 border-b border-slate-50 last:border-0">
-      <p className="text-[11px] font-medium text-slate-400 w-28 shrink-0">{label}</p>
+      <p className="text-[11px] font-medium text-slate-400 w-28 shrink-0">
+        {label}
+      </p>
       <div className="flex items-center gap-2 flex-1 justify-end">
-        <p className={`text-sm font-semibold text-slate-800 truncate ${mono ? "font-mono text-xs" : ""}`}>
+        <p
+          className={`text-sm font-semibold text-slate-800 truncate ${mono ? "font-mono text-xs" : ""}`}
+        >
           {value}
         </p>
         {copyable && (
@@ -57,7 +82,11 @@ function InfoRow({
             onClick={copy}
             className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:border-blue-300 hover:text-blue-600 transition-colors"
           >
-            {copied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
+            {copied ? (
+              <Check className="h-3 w-3 text-emerald-500" />
+            ) : (
+              <Copy className="h-3 w-3" />
+            )}
           </button>
         )}
       </div>
@@ -67,21 +96,28 @@ function InfoRow({
 
 /* ── Change Password Modal ── */
 function ChangePasswordModal({ onClose }: { onClose: () => void }) {
-  const [form, setForm]       = useState({ current: "", newPass: "", confirm: "" });
-  const [show, setShow]       = useState({ current: false, newPass: false, confirm: false });
-  const [error, setError]     = useState("");
+  const [form, setForm] = useState({ current: "", newPass: "", confirm: "" });
+  const [show, setShow] = useState({
+    current: false,
+    newPass: false,
+    confirm: false,
+  });
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
   const handleSubmit = async () => {
     if (!form.current || !form.newPass || !form.confirm) {
-      setError("All fields are required."); return;
+      setError("All fields are required.");
+      return;
     }
     if (form.newPass !== form.confirm) {
-      setError("New passwords do not match."); return;
+      setError("New passwords do not match.");
+      return;
     }
     if (form.newPass.length < 8) {
-      setError("Password must be at least 8 characters."); return;
+      setError("Password must be at least 8 characters.");
+      return;
     }
     setError("");
     setLoading(true);
@@ -95,7 +131,9 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
       setTimeout(onClose, 1500);
     } catch (e: any) {
       setError(
-        e?.response?.data?.message ?? e?.message ?? "Failed to update password. Try again."
+        e?.response?.data?.message ??
+          e?.message ??
+          "Failed to update password. Try again.",
       );
     } finally {
       setLoading(false);
@@ -108,7 +146,9 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
           <div>
             <p className="text-sm font-bold text-slate-900">Change Password</p>
-            <p className="text-[11px] text-slate-400">Keep your account secure</p>
+            <p className="text-[11px] text-slate-400">
+              Keep your account secure
+            </p>
           </div>
           <button
             onClick={onClose}
@@ -123,33 +163,56 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100">
                 <Check className="h-7 w-7 text-emerald-600" />
               </div>
-              <p className="text-sm font-bold text-emerald-700">Password changed!</p>
+              <p className="text-sm font-bold text-emerald-700">
+                Password changed!
+              </p>
             </div>
           ) : (
             <>
               {[
-                { key: "current", label: "Current Password", showKey: "current" },
-                { key: "newPass", label: "New Password",     showKey: "newPass" },
-                { key: "confirm", label: "Confirm Password", showKey: "confirm" },
+                {
+                  key: "current",
+                  label: "Current Password",
+                  showKey: "current",
+                },
+                { key: "newPass", label: "New Password", showKey: "newPass" },
+                {
+                  key: "confirm",
+                  label: "Confirm Password",
+                  showKey: "confirm",
+                },
               ].map(({ key, label, showKey }) => (
                 <div key={key}>
-                  <p className="text-[11px] font-semibold text-slate-500 mb-1">{label}</p>
+                  <p className="text-[11px] font-semibold text-slate-500 mb-1">
+                    {label}
+                  </p>
                   <div className="relative">
                     <input
-                      type={show[showKey as keyof typeof show] ? "text" : "password"}
+                      type={
+                        show[showKey as keyof typeof show] ? "text" : "password"
+                      }
                       value={form[key as keyof typeof form]}
-                      onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((p) => ({ ...p, [key]: e.target.value }))
+                      }
                       className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 pr-10 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                       placeholder="••••••••"
                     />
                     <button
                       type="button"
-                      onClick={() => setShow(p => ({ ...p, [showKey]: !p[showKey as keyof typeof p] }))}
+                      onClick={() =>
+                        setShow((p) => ({
+                          ...p,
+                          [showKey]: !p[showKey as keyof typeof p],
+                        }))
+                      }
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
                     >
-                      {show[showKey as keyof typeof show]
-                        ? <EyeOff className="h-4 w-4" />
-                        : <Eye    className="h-4 w-4" />}
+                      {show[showKey as keyof typeof show] ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -160,15 +223,24 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
                 </p>
               )}
               <div className="flex gap-2 pt-2">
-                <Button variant="outline" onClick={onClose} disabled={loading}
+                <Button
+                  variant="outline"
+                  onClick={onClose}
+                  disabled={loading}
                   className="flex-1 h-10 rounded-xl border-slate-200 text-sm font-semibold"
                 >
                   Cancel
                 </Button>
-                <Button onClick={handleSubmit} disabled={loading}
-                  className="flex-1 h-10 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-bold shadow-md shadow-blue-600/20"
+                <Button
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  className="flex-1 h-10 rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 text-white text-sm font-bold shadow-md shadow-blue-600/20"
                 >
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Update"}
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Update"
+                  )}
                 </Button>
               </div>
             </>
@@ -181,24 +253,28 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
 
 /* ── Change PIN Modal ── */
 function ChangePinModal({ onClose }: { onClose: () => void }) {
-  const [form, setForm]       = useState({ current: "", newPin: "", confirm: "" });
-  const [error, setError]     = useState("");
+  const [form, setForm] = useState({ current: "", newPin: "", confirm: "" });
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
   const handleSubmit = async () => {
     if (!form.current || !form.newPin || !form.confirm) {
-      setError("All fields are required."); return;
+      setError("All fields are required.");
+      return;
     }
     if (!/^\d{4}$/.test(form.newPin)) {
-      setError("PIN must be exactly 4 digits."); return;
+      setError("PIN must be exactly 4 digits.");
+      return;
     }
     if (form.newPin !== form.confirm) {
-      setError("PINs do not match."); return;
+      setError("PINs do not match.");
+      return;
     }
     const weak = ["1234", "4321", "0000", "1111", "2222", "3333", "4444"];
     if (weak.includes(form.newPin)) {
-      setError("PIN is too weak. Choose a stronger one."); return;
+      setError("PIN is too weak. Choose a stronger one.");
+      return;
     }
     setError("");
     setLoading(true);
@@ -213,7 +289,9 @@ function ChangePinModal({ onClose }: { onClose: () => void }) {
       setTimeout(onClose, 1500);
     } catch (e: any) {
       setError(
-        e?.response?.data?.message ?? e?.message ?? "Failed to update PIN. Try again."
+        e?.response?.data?.message ??
+          e?.message ??
+          "Failed to update PIN. Try again.",
       );
     } finally {
       setLoading(false);
@@ -225,8 +303,12 @@ function ChangePinModal({ onClose }: { onClose: () => void }) {
       <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
           <div>
-            <p className="text-sm font-bold text-slate-900">Change Transaction PIN</p>
-            <p className="text-[11px] text-slate-400">4-digit PIN for sending money</p>
+            <p className="text-sm font-bold text-slate-900">
+              Change Transaction PIN
+            </p>
+            <p className="text-[11px] text-slate-400">
+              4-digit PIN for sending money
+            </p>
           </div>
           <button
             onClick={onClose}
@@ -246,18 +328,29 @@ function ChangePinModal({ onClose }: { onClose: () => void }) {
           ) : (
             <>
               {[
-                { key: "current", label: "Current PIN", placeholder: "••••"    },
-                { key: "newPin",  label: "New PIN",     placeholder: "4 digits" },
-                { key: "confirm", label: "Confirm PIN", placeholder: "4 digits" },
+                { key: "current", label: "Current PIN", placeholder: "••••" },
+                { key: "newPin", label: "New PIN", placeholder: "4 digits" },
+                {
+                  key: "confirm",
+                  label: "Confirm PIN",
+                  placeholder: "4 digits",
+                },
               ].map(({ key, label, placeholder }) => (
                 <div key={key}>
-                  <p className="text-[11px] font-semibold text-slate-500 mb-1">{label}</p>
+                  <p className="text-[11px] font-semibold text-slate-500 mb-1">
+                    {label}
+                  </p>
                   <input
                     type="password"
                     inputMode="numeric"
                     maxLength={4}
                     value={form[key as keyof typeof form]}
-                    onChange={e => setForm(p => ({ ...p, [key]: e.target.value.replace(/\D/g, "") }))}
+                    onChange={(e) =>
+                      setForm((p) => ({
+                        ...p,
+                        [key]: e.target.value.replace(/\D/g, ""),
+                      }))
+                    }
                     className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-800 tracking-widest placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                     placeholder={placeholder}
                   />
@@ -269,85 +362,28 @@ function ChangePinModal({ onClose }: { onClose: () => void }) {
                 </p>
               )}
               <div className="flex gap-2 pt-2">
-                <Button variant="outline" onClick={onClose} disabled={loading}
+                <Button
+                  variant="outline"
+                  onClick={onClose}
+                  disabled={loading}
                   className="flex-1 h-10 rounded-xl border-slate-200 text-sm font-semibold"
                 >
                   Cancel
                 </Button>
-                <Button onClick={handleSubmit} disabled={loading}
-                  className="flex-1 h-10 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-bold shadow-md shadow-blue-600/20"
+                <Button
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  className="flex-1 h-10 rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 text-white text-sm font-bold shadow-md shadow-blue-600/20"
                 >
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Update PIN"}
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Update PIN"
+                  )}
                 </Button>
               </div>
             </>
           )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ── Edit Name Modal ── */
-function EditNameModal({
-  currentName,
-  onClose,
-  onSave,
-}: {
-  currentName: string;
-  onClose: () => void;
-  onSave: (name: string) => void;
-}) {
-  const [value, setValue]     = useState(currentName);
-  const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState("");
-
-  const handleSave = async () => {
-    if (!value.trim()) { setError("Name cannot be empty."); return; }
-    setLoading(true);
-    setError("");
-    try {
-      // Adjust endpoint if your backend has a profile update route
-      await (authApi as any).updateProfile?.({ full_name: value.trim() });
-      onSave(value.trim());
-      onClose();
-    } catch (e: any) {
-      setError(e?.response?.data?.message ?? "Failed to update name.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-          <p className="text-sm font-bold text-slate-900">Edit Display Name</p>
-          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 text-slate-400 hover:bg-slate-50">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-        <div className="p-5 space-y-3">
-          <input
-            autoFocus
-            value={value}
-            onChange={e => setValue(e.target.value)}
-            className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            placeholder="Your full name"
-          />
-          {error && (
-            <p className="text-[11px] font-medium text-rose-600 flex items-center gap-1">
-              <AlertTriangle className="h-3 w-3" /> {error}
-            </p>
-          )}
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose} disabled={loading} className="flex-1 h-10 rounded-xl border-slate-200 text-sm font-semibold">
-              Cancel
-            </Button>
-            <Button onClick={handleSave} disabled={loading} className="flex-1 h-10 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-bold">
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
-            </Button>
-          </div>
         </div>
       </div>
     </div>
@@ -360,7 +396,7 @@ function ProfileSkeleton() {
     <div className="mx-auto max-w-2xl space-y-5 animate-pulse">
       <div className="rounded-2xl bg-slate-200 h-44" />
       <div className="rounded-2xl bg-white border border-slate-100 p-5 space-y-3">
-        {[1,2,3,4,5].map(i => (
+        {[1, 2, 3, 4, 5].map((i) => (
           <div key={i} className="flex justify-between py-2">
             <div className="h-3 w-20 rounded bg-slate-100" />
             <div className="h-3 w-32 rounded bg-slate-100" />
@@ -377,20 +413,19 @@ function ProfileSkeleton() {
    PROFILE PAGE
 ══════════════════════════════════════════ */
 export function ProfilePage() {
-  const navigate  = useNavigate();
-  const logout    = useAuthStore(s => s.logout);
-  const fileRef   = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
+  const logout = useAuthStore((s) => s.logout);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   /* ── Data state ── */
-  const [user,    setUser]    = useState<UserProfile | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   /* ── UI state ── */
   const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [showPinModal,      setShowPinModal]      = useState(false);
-  const [showNameModal,     setShowNameModal]      = useState(false);
-  const [displayName,       setDisplayName]        = useState("");
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [displayName, setDisplayName] = useState("");
 
   /* ── Fetch profile ── */
   const fetchProfile = useCallback(async () => {
@@ -402,36 +437,54 @@ export function ProfilePage() {
       setUser(u);
       setDisplayName(u.full_name);
     } catch (e: any) {
-      setError(e?.response?.data?.message ?? e?.message ?? "Failed to load profile.");
+      setError(
+        e?.response?.data?.message ?? e?.message ?? "Failed to load profile.",
+      );
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => { fetchProfile(); }, [fetchProfile]);
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
 
   /* ── Logout ── */
   const handleLogout = async () => {
-    try { await authApi.logout(); } catch { /* ignore */ }
+    try {
+      await authApi.logout();
+    } catch {
+      /* ignore */
+    }
     logout();
     navigate({ to: "/sign-in" });
   };
 
   /* ── Derived ── */
   const initials = displayName
-    ? displayName.split(" ").map((s: string) => s[0]).join("").slice(0, 2).toUpperCase()
+    ? displayName
+        .split(" ")
+        .map((s: string) => s[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
     : "??";
 
   const joinDate = user
     ? new Date(user.created_at).toLocaleDateString("en-PK", {
-        year: "numeric", month: "long", day: "numeric",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
       })
     : "";
 
   const lastLogin = user
     ? new Date(user.last_login).toLocaleDateString("en-PK", {
-        year: "numeric", month: "short", day: "numeric",
-        hour: "2-digit", minute: "2-digit",
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       })
     : "";
 
@@ -479,17 +532,20 @@ export function ProfilePage() {
           {/* Content */}
           {!loading && !error && user && (
             <div className="mx-auto max-w-2xl space-y-5">
-
               {/* ── Avatar + name hero ── */}
-              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 p-6 text-white shadow-xl shadow-blue-900/30">
+              <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-slate-900 via-blue-900 to-indigo-900 p-6 text-white shadow-xl shadow-blue-900/30">
                 <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/5" />
                 <div className="absolute -bottom-4 right-20 h-16 w-16 rounded-full bg-white/5" />
                 <div className="relative flex items-center gap-5">
                   {/* Avatar */}
                   <div className="relative">
-                    <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-400 to-indigo-500 text-2xl font-black text-white shadow-lg overflow-hidden">
+                    <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-linear-to-br from-blue-400 to-indigo-500 text-2xl font-black text-white shadow-lg overflow-hidden">
                       {user.avatar_url ? (
-                        <img src={user.avatar_url} alt={displayName} className="h-full w-full object-cover" />
+                        <img
+                          src={user.avatar_url}
+                          alt={displayName}
+                          className="h-full w-full object-cover"
+                        />
                       ) : (
                         initials
                       )}
@@ -500,19 +556,20 @@ export function ProfilePage() {
                     >
                       <Camera className="h-3.5 w-3.5" />
                     </button>
-                    <input ref={fileRef} type="file" accept="image/*" className="hidden" />
+                    <input
+                      ref={fileRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                    />
                   </div>
 
                   {/* Name + status */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-xl font-black text-white truncate">{displayName}</p>
-                      <button
-                        onClick={() => setShowNameModal(true)}
-                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10 text-blue-200 hover:bg-white/20 transition-colors"
-                      >
-                        <Edit2 className="h-3.5 w-3.5" />
-                      </button>
+                      <p className="text-xl font-black text-white truncate">
+                        {displayName}
+                      </p>
                     </div>
                     <div className="mt-1.5 flex flex-wrap items-center gap-2">
                       {user.is_verified && (
@@ -529,7 +586,9 @@ export function ProfilePage() {
                         {user.role}
                       </span>
                     </div>
-                    <p className="mt-2 text-[11px] text-blue-200">Member since {joinDate}</p>
+                    <p className="mt-2 text-[11px] text-blue-200">
+                      Member since {joinDate}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -538,14 +597,16 @@ export function ProfilePage() {
               <div className="rounded-2xl border border-slate-100 bg-white shadow-sm">
                 <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4">
                   <User className="h-4 w-4 text-slate-500" />
-                  <p className="text-sm font-bold text-slate-800">Account Information</p>
+                  <p className="text-sm font-bold text-slate-800">
+                    Account Information
+                  </p>
                 </div>
                 <div className="px-5 py-2">
-                  <InfoRow label="Full Name"  value={displayName}   />
-                  <InfoRow label="User ID"    value={user.id}       mono copyable />
-                  <InfoRow label="Role"       value={user.role}     />
-                  <InfoRow label="Joined"     value={joinDate}      />
-                  <InfoRow label="Last Login" value={lastLogin}     />
+                  <InfoRow label="Full Name" value={displayName} />
+                  <InfoRow label="User ID" value={user.id} mono copyable />
+                  <InfoRow label="Role" value={user.role} />
+                  <InfoRow label="Joined" value={joinDate} />
+                  <InfoRow label="Last Login" value={lastLogin} />
                 </div>
               </div>
 
@@ -553,7 +614,9 @@ export function ProfilePage() {
               <div className="rounded-2xl border border-slate-100 bg-white shadow-sm">
                 <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4">
                   <Phone className="h-4 w-4 text-slate-500" />
-                  <p className="text-sm font-bold text-slate-800">Contact Details</p>
+                  <p className="text-sm font-bold text-slate-800">
+                    Contact Details
+                  </p>
                 </div>
                 <div className="divide-y divide-slate-50 px-5">
                   {/* Phone */}
@@ -563,8 +626,12 @@ export function ProfilePage() {
                         <Phone className="h-4 w-4 text-emerald-600" />
                       </div>
                       <div>
-                        <p className="text-[11px] text-slate-400">Phone Number</p>
-                        <p className="text-sm font-semibold text-slate-800">{user.phone}</p>
+                        <p className="text-[11px] text-slate-400">
+                          Phone Number
+                        </p>
+                        <p className="text-sm font-semibold text-slate-800">
+                          {user.phone}
+                        </p>
                       </div>
                     </div>
                     <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
@@ -579,8 +646,12 @@ export function ProfilePage() {
                         <Mail className="h-4 w-4 text-blue-600" />
                       </div>
                       <div>
-                        <p className="text-[11px] text-slate-400">Email Address</p>
-                        <p className="text-sm font-semibold text-slate-800">{user.email}</p>
+                        <p className="text-[11px] text-slate-400">
+                          Email Address
+                        </p>
+                        <p className="text-sm font-semibold text-slate-800">
+                          {user.email}
+                        </p>
                       </div>
                     </div>
                     {user.is_email_verified ? (
@@ -607,7 +678,10 @@ export function ProfilePage() {
                         <div>
                           <p className="text-[11px] text-slate-400">CNIC</p>
                           <p className="text-sm font-semibold font-mono text-slate-800">
-                            {user.cnic.replace(/(\d{5})-(\d{4})\d{3}-(\d{1})/, "$1-****$2-$3")}
+                            {user.cnic.replace(
+                              /(\d{5})-(\d{4})\d{3}-(\d{1})/,
+                              "$1-****$2-$3",
+                            )}
                           </p>
                         </div>
                       </div>
@@ -620,7 +694,7 @@ export function ProfilePage() {
               </div>
 
               {/* ── Wallet snapshot ── */}
-              <div className="rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50 p-5">
+              <div className="rounded-2xl border border-blue-100 bg-linear-to-r from-blue-50 to-indigo-50 p-5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 shadow-md shadow-blue-600/20">
@@ -659,8 +733,12 @@ export function ProfilePage() {
                         <KeyRound className="h-4 w-4 text-slate-500 group-hover:text-blue-600 transition-colors" />
                       </div>
                       <div className="text-left">
-                        <p className="text-sm font-semibold text-slate-800">Change Password</p>
-                        <p className="text-[11px] text-slate-400">Update your login password</p>
+                        <p className="text-sm font-semibold text-slate-800">
+                          Change Password
+                        </p>
+                        <p className="text-[11px] text-slate-400">
+                          Update your login password
+                        </p>
                       </div>
                     </div>
                     <Edit2 className="h-4 w-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
@@ -674,8 +752,12 @@ export function ProfilePage() {
                         <Shield className="h-4 w-4 text-slate-500 group-hover:text-blue-600 transition-colors" />
                       </div>
                       <div className="text-left">
-                        <p className="text-sm font-semibold text-slate-800">Change Transaction PIN</p>
-                        <p className="text-[11px] text-slate-400">4-digit PIN used to send money</p>
+                        <p className="text-sm font-semibold text-slate-800">
+                          Change Transaction PIN
+                        </p>
+                        <p className="text-[11px] text-slate-400">
+                          4-digit PIN used to send money
+                        </p>
                       </div>
                     </div>
                     <Edit2 className="h-4 w-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
@@ -691,7 +773,9 @@ export function ProfilePage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-bold text-rose-800">Log Out</p>
-                    <p className="text-[11px] text-rose-500">Sign out from this device</p>
+                    <p className="text-[11px] text-rose-500">
+                      Sign out from this device
+                    </p>
                   </div>
                   <Button
                     variant="outline"
@@ -702,22 +786,19 @@ export function ProfilePage() {
                   </Button>
                 </div>
               </div>
-
             </div>
           )}
         </div>
       </AppLayout>
 
       {/* ── Modals ── */}
-      {showPasswordModal && <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />}
-      {showPinModal      && <ChangePinModal      onClose={() => setShowPinModal(false)}      />}
-      {showNameModal     && user && (
-        <EditNameModal
-          currentName={displayName}
-          onClose={() => setShowNameModal(false)}
-          onSave={(name) => setDisplayName(name)}
-        />
+      {showPasswordModal && (
+        <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />
       )}
+      {showPinModal && (
+        <ChangePinModal onClose={() => setShowPinModal(false)} />
+      )}
+      
     </>
   );
 }

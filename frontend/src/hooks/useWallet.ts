@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { walletApi } from "../api/endpoints/wallet.api";
 import { QUERY_KEYS } from "../api/queryKeys";
+import { authApi } from "@/api/endpoints/auth.api";
+import { keepPreviousData } from "@tanstack/react-query";
 
 
 export const useWallet = () => {
@@ -43,22 +45,16 @@ export const useTopUp = () => {
 };
 
 
-export const useSendMoney = () => {
-  const queryClient = useQueryClient();
-
+export function useSendMoney() {
   return useMutation({
-    mutationFn: (payload) => walletApi.sendMoney(payload),
-
-    onSuccess: () => {
-      // Invalidate everything that changes after a transfer
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.wallet });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.walletLogs });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.transactions });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.notifications });
-    },
+    mutationFn: (payload: {
+      receiver_phone: string;
+      amount: number;
+      note: string;
+      pin: string;
+    }) => authApi.sendMoney(payload),
   });
-};
-
+}
 
 export const useTransactionHistory = (params = {}) => {
   return useQuery({
@@ -67,7 +63,7 @@ export const useTransactionHistory = (params = {}) => {
       const { data } = await walletApi.getHistory(params);
       return data.data;
     },
-    keepPreviousData: true, // smooth pagination — keeps old data while fetching new
+   placeholderData: keepPreviousData, // smooth pagination — keeps old data while fetching new
   });
 };
 
@@ -79,7 +75,7 @@ export const useWalletLogs = (params = {}) => {
       const { data } = await walletApi.getLogs(params);
       return data.data;
     },
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
   });
 };
 

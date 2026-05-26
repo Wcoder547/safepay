@@ -44,12 +44,12 @@ export function Security() {
           </ul>
         </div>
         <div className="relative flex items-center justify-center">
-          <div className="absolute inset-0 mx-auto h-full w-[90%] rounded-[2rem] bg-gradient-to-br from-rose-300/30 via-pink-300/20 to-transparent blur-2xl" />
+          <div className="absolute inset-0 mx-auto h-full w-[90%] rounded-[2rem] bg-linear-to-br from-rose-300/30 via-pink-300/20 to-transparent blur-2xl" />
           <div className="relative w-full max-w-md rounded-[1.75rem] border border-white/60 bg-white p-8 shadow-[0_30px_80px_-20px_rgba(244,63,94,0.25)]">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-500 to-pink-600 text-3xl font-bold text-white shadow-xl shadow-rose-500/40">✕</div>
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-linear-to-br from-rose-500 to-pink-600 text-3xl font-bold text-white shadow-xl shadow-rose-500/40">✕</div>
             <h3 className="mt-6 text-center text-2xl font-bold tracking-tight text-slate-900">Transfer blocked</h3>
             <p className="mt-1 text-center text-sm text-slate-500">Rs. 25,000 to <span className="font-medium text-slate-700">Unknown recipient</span></p>
-            <div className="mt-7 rounded-2xl bg-gradient-to-br from-slate-50 to-rose-50/50 p-5 ring-1 ring-slate-100">
+            <div className="mt-7 rounded-2xl bg-linear-to-br from-slate-50 to-rose-50/50 p-5 ring-1 ring-slate-100">
               <div className="flex items-end justify-between">
                 <span className="text-xs font-medium text-slate-600">Risk score</span>
                 <span className="text-2xl font-bold text-rose-600">87<span className="text-sm text-slate-400">/100</span></span>

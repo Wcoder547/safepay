@@ -32,13 +32,13 @@ export function Features() {
         <div className="mt-16 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {features.map((f) => (
             <div key={f.title} className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-7 transition-all hover:-translate-y-1 hover:border-slate-300 hover:shadow-2xl hover:shadow-slate-200/60">
-              <div className="absolute inset-0 z-0 bg-gradient-to-br from-slate-50 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+              <div className="absolute inset-0 z-0 bg-linear-to-br from-slate-50 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
               {f.popular && (
-                <span className="absolute right-5 top-5 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-white shadow-md shadow-amber-500/30">
+                <span className="absolute right-5 top-5 inline-flex items-center gap-1 rounded-full bg-linear-to-r from-amber-400 to-orange-500 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-white shadow-md shadow-amber-500/30">
                   <Star className="h-2.5 w-2.5 fill-current" /> Popular
                 </span>
               )}
-              <div className={`relative flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-lg ${colorMap[f.color]}`}>
+              <div className={`relative flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br text-white shadow-lg ${colorMap[f.color]}`}>
                 <f.icon className="h-5 w-5" />
               </div>
               <h3 className="relative mt-6 text-lg font-semibold tracking-tight text-slate-900">{f.title}</h3>

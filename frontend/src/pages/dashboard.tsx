@@ -580,7 +580,7 @@ export function Dashboard() {
                     const timeStr   = formatTime(tx.created_at);
                     return (
                       <li key={tx.id} className="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-slate-50">
-                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${tx.avatar} text-[11px] font-bold text-white shadow-sm`}>
+                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-linear-to-br ${tx.avatar} text-[11px] font-bold text-white shadow-sm`}>
                           {getInitials(tx.name)}
                         </div>
                         <div className="flex-1 min-w-0">

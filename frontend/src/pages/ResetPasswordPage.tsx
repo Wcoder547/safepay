@@ -180,7 +180,7 @@ export function ResetPasswordPage() {
           {isReset ? (
             <div className="flex flex-col items-center py-6 text-center">
               <div className="relative mb-5">
-                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 shadow-lg shadow-emerald-400/30">
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-br from-emerald-400 to-teal-500 shadow-lg shadow-emerald-400/30">
                   <CheckCircle2 className="h-10 w-10 text-white" strokeWidth={2.5} />
                 </div>
                 <div className="absolute inset-0 animate-ping rounded-full bg-emerald-400 opacity-20" />
