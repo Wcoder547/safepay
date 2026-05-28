@@ -47,7 +47,7 @@ SafePay lets users send and receive money instantly, just like EasyPaisa or Jazz
 
 ## Demo
 
-> _Coming soon / add your live URL here_
+> _http://16.170.146.30/
 
 ---
 
