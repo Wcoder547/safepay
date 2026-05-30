@@ -45,7 +45,6 @@ SafePay allows users to send and receive money securely while every transaction 
   - [Future Improvements](#future-improvements)
   - [Author](#author)
   - [License](#license)
-- [MIT © Waseem Akram](#mit--waseem-akram)
 
 ---
 
@@ -505,9 +504,4 @@ LinkedIn: https://www.linkedin.com/in/wasim-akram-dev/
 
 ## License
 
-<<<<<<< HEAD
 MIT © [Waseem Akram](https://www.linkedin.com/in/wasim-akram-dev/)
-=======
-MIT © Waseem Akram
-
-> > > > > > > 357e6e1 (update readme file)
