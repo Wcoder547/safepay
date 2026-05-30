@@ -1,97 +1,218 @@
-# SafePay 💸
+# SafePay — AI-Powered Digital Wallet
 
-> A full-stack digital wallet for secure P2P money transfers — with a custom-trained Random Forest fraud detection model that scores every transaction and blocks it if the fraud probability exceeds 70%.
+> A full-stack P2P digital wallet inspired by EasyPaisa/JazzCash, built with React, Node.js, Express, PostgreSQL, Prisma, FastAPI, and a custom Random Forest fraud detection model.
 
-SafePay lets users send and receive money instantly, just like EasyPaisa or JazzCash, but goes a step further: every transaction is scored by a machine learning model before it's processed. If the fraud score is **≥ 70%**, the transaction is blocked automatically. If it's below that threshold, it goes through.
+SafePay allows users to send and receive money securely while every transaction is analyzed by an ML fraud detection service before it is processed. If the fraud probability is **70% or higher**, the transaction is blocked before any database write occurs.
+
+> **Disclaimer:** SafePay is an educational/portfolio project and is not a real banking or financial service. Do not use real financial data.
 
 ---
 
 ## Table of Contents
 
-- [SafePay 💸](#safepay-)
+- [SafePay — AI-Powered Digital Wallet](#safepay--ai-powered-digital-wallet)
   - [Table of Contents](#table-of-contents)
   - [Features](#features)
-  - [Demo](#demo)
+  - [Live Demo](#live-demo)
+    - [Demo Credentials](#demo-credentials)
+  - [Preview](#preview)
+  - [Architecture Diagram](#architecture-diagram)
+  - [How the Fraud Detection Flow Works](#how-the-fraud-detection-flow-works)
+    - [Transfer Decision Logic](#transfer-decision-logic)
   - [Tech Stack](#tech-stack)
-  - [How It Works](#how-it-works)
+  - [Key Technical Decisions](#key-technical-decisions)
   - [Getting Started](#getting-started)
     - [Prerequisites](#prerequisites)
-    - [Local Setup (without Docker)](#local-setup-without-docker)
-    - [Local Setup (with Docker)](#local-setup-with-docker)
+    - [Local Setup Without Docker](#local-setup-without-docker)
+      - [Backend](#backend)
+      - [Frontend](#frontend)
+      - [ML API](#ml-api)
+    - [Local Setup With Docker](#local-setup-with-docker)
   - [Environment Variables](#environment-variables)
   - [API Reference](#api-reference)
-    - [Auth](#auth)
-    - [Wallet](#wallet)
-      - [Example — Send Money](#example--send-money)
-  - [ML Fraud Detection](#ml-fraud-detection)
-    - [Model](#model)
-    - [Request / Response](#request--response)
+    - [Auth Routes](#auth-routes)
+    - [Wallet Routes](#wallet-routes)
+    - [Example — Send Money](#example--send-money)
+  - [ML Fraud Detection Service](#ml-fraud-detection-service)
+    - [Model Details](#model-details)
+    - [Prediction Request](#prediction-request)
+    - [Prediction Response](#prediction-response)
   - [Deployment](#deployment)
-  - [CI/CD Pipeline](#cicd-pipeline)
+    - [Option 1: Dockerized Cloud Deployment](#option-1-dockerized-cloud-deployment)
+    - [Option 2: Separate Free-Tier Deployment](#option-2-separate-free-tier-deployment)
+    - [Deployment Note](#deployment-note)
   - [Project Structure](#project-structure)
+  - [Future Improvements](#future-improvements)
+  - [Author](#author)
   - [License](#license)
 
 ---
 
 ## Features
 
-- **Send & Receive Money** — instant wallet-to-wallet transfers between registered users
-- **Wallet Balance** — real-time balance tracking per user account
-- **Fraud Detection** — every transaction is scored by a Random Forest model; anything ≥ 70% fraud probability is blocked before processing
-- **Transaction History** — full log of all sent, received, and blocked transactions
-- **Secure Auth** — JWT-based authentication with protected routes
-- **Dockerized** — all three services (frontend, backend, ML API) run via Docker Compose
-- **Live on AWS** — deployed and accessible via cloud infrastructure
+- **User Authentication** — secure signup/login flow with JWT authentication.
+- **Wallet Dashboard** — shows balance, sent amount, received amount, blocked transactions, and account status.
+- **Send Money Flow** — 3-step transfer flow: recipient, amount, confirmation PIN.
+- **AI Fraud Detection** — every transfer is scored by a Random Forest model before processing.
+- **Fraud Blocking** — transactions with fraud probability `>= 70%` are blocked before database write.
+- **Transaction History** — searchable transaction history with sent, received, and blocked status.
+- **Wallet Audit Log** — debit/credit wallet activity with balance tracking.
+- **Notifications** — success, alert, and information notifications for wallet activity.
+- **Profile & Security** — profile details, wallet balance, password update, PIN update, and active sessions.
+- **Session Management** — users can revoke individual sessions or revoke all other sessions.
+- **CSV Export** — export transaction data for review.
+- **Dockerized Setup** — frontend, backend, PostgreSQL, and ML API can run using Docker Compose.
 
 ---
 
-## Demo
+## Live Demo
 
+<<<<<<< HEAD
 > _http://16.170.146.30/
+=======
+**Demo:** http://16.170.146.30/
+
+### Demo Credentials
+
+```txt
+Email: mw5667155@gmail.com
+Password: password123@@
+Transaction PIN: 8877
+```
+
+---
+
+## Preview
+
+| Login                                       | Wallet Dashboard                                    |
+| ------------------------------------------- | --------------------------------------------------- |
+| ![Login Screen](docs/screenshots/login.png) | ![Wallet Dashboard](docs/screenshots/dashboard.png) |
+
+| Send Money - Recipient                                       | Send Money - Amount                                    |
+| ------------------------------------------------------------ | ------------------------------------------------------ |
+| ![Send Money Recipient](docs/screenshots/send-recipient.png) | ![Send Money Amount](docs/screenshots/send-amount.png) |
+
+| Send Money - Confirm                                     | Transaction Receipt                                              |
+| -------------------------------------------------------- | ---------------------------------------------------------------- |
+| ![Send Money Confirm](docs/screenshots/send-confirm.png) | ![Transaction Receipt](docs/screenshots/transaction-receipt.png) |
+
+| Transaction History                                              | Wallet Audit Log                                           |
+| ---------------------------------------------------------------- | ---------------------------------------------------------- |
+| ![Transaction History](docs/screenshots/transaction-history.png) | ![Wallet Audit Log](docs/screenshots/wallet-audit-log.png) |
+
+| Fraud Blocked Result                                               | Active Sessions / Settings                                          |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| ![Fraud Blocked Result](docs/screenshots/fraud-blocked-result.png) | ![Settings Active Sessions](docs/screenshots/settings-sessions.png) |
+
+---
+
+## Architecture Diagram
+
+```mermaid
+flowchart LR
+    U[User / Browser] --> FE[React Frontend]
+
+    FE -->|Login / Wallet / Transfer Requests| API[Node.js + Express API]
+    API --> AUTH[JWT Auth Middleware]
+    AUTH --> WALLET[Wallet & Transaction Service]
+
+    WALLET -->|Build transaction features| ML[FastAPI ML Service]
+    ML --> RF[Random Forest Model]
+    RF -->|fraud_score + is_fraud| ML
+    ML -->|Prediction Result| WALLET
+
+    WALLET --> DECISION{Fraud score >= 70%?}
+
+    DECISION -->|Yes| BLOCK[Block Transaction]
+    BLOCK --> NODB[No DB Write]
+    BLOCK --> NOTIFY1[Create Fraud Alert / Notify User]
+
+    DECISION -->|No| PRISMA[Prisma ORM]
+    PRISMA --> DB[(PostgreSQL Database)]
+    DB --> HISTORY[Transaction History]
+    DB --> BALANCE[Wallet Balance Update]
+    WALLET --> NOTIFY2[Success Notification]
+
+    HISTORY --> API
+    BALANCE --> API
+    NOTIFY1 --> API
+    NOTIFY2 --> API
+    API --> FE
+
+    subgraph Dockerized Local Setup
+        FE
+        API
+        ML
+        DB
+    end
+```
+
+---
+
+## How the Fraud Detection Flow Works
+
+```txt
+User initiates transfer
+        │
+        ▼
+React frontend sends request to Express API
+        │
+        ▼
+Express API validates JWT, recipient, amount, and PIN
+        │
+        ▼
+Backend sends transaction features to FastAPI ML service
+        │
+        ▼
+Random Forest model returns fraud_score between 0 and 1
+        │
+   ┌────┴────────────┐
+   │                 │
+score >= 0.70    score < 0.70
+   │                 │
+BLOCKED          PROCESSED
+No DB write      Prisma transaction updates balances
+User notified    Transaction saved in PostgreSQL
+```
+
+### Transfer Decision Logic
+
+1. User enters recipient phone number and note.
+2. User enters amount and confirms transfer with transaction PIN.
+3. Backend validates authentication, balance, recipient, and PIN.
+4. Backend sends transaction features to the FastAPI ML service.
+5. ML service returns `fraud_score` and `is_fraud`.
+6. If `fraud_score >= 0.70`, the transaction is blocked before database write.
+7. If `fraud_score < 0.70`, the transaction is processed and stored using Prisma.
+8. User receives success or fraud-blocked notification.
+>>>>>>> 357e6e1 (update readme file)
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Frontend | React.js |
-| Backend | Node.js, Express.js |
-| Database | PostgreSQL (via Prisma ORM) |
-| Fraud Detection | Random Forest model (scikit-learn) served via FastAPI |
-| Containerization | Docker, Docker Compose |
-| Cloud | AWS |
-| CI/CD | GitHub Actions (in progress) |
+| Layer           | Technology                           |
+| --------------- | ------------------------------------ |
+| Frontend        | React.js, Tailwind CSS               |
+| Backend         | Node.js, Express.js                  |
+| Database        | PostgreSQL                           |
+| ORM             | Prisma ORM                           |
+| Authentication  | JWT Authentication                   |
+| Fraud Detection | FastAPI, scikit-learn, Random Forest |
+| DevOps          | Docker, Docker Compose               |
+| Cloud           | AWS / Cloud VM                       |
+| Version Control | Git, GitHub                          |
 
 ---
 
-## How It Works
+## Key Technical Decisions
 
-```
-User initiates transfer
-        │
-        ▼
-  Express API receives request
-        │
-        ▼
-  Transaction payload sent to FastAPI (ML model)
-        │
-        ▼
-  Random Forest returns fraud_score (0.0 – 1.0)
-        │
-   ┌────┴────────────┐
-fraud_score ≥ 0.70   fraud_score < 0.70
-        │                    │
-    BLOCKED              PROCESSED
-    HTTP 400        Balances updated in
-  no DB write        PostgreSQL via Prisma
-```
-
-1. User submits a transfer (amount + recipient).
-2. Backend sends transaction features to the FastAPI ML service.
-3. The Random Forest model returns a `fraud_score` between 0 and 1.
-4. If `fraud_score >= 0.70` → transaction is blocked, user is notified, nothing is written to the DB.
-5. If `fraud_score < 0.70` → balances are updated and the transaction is persisted via Prisma.
+- **PostgreSQL + Prisma** were used because wallet transactions need relational consistency and safe balance updates.
+- **Fraud detection runs before database write** so risky transactions are blocked before they affect wallet balances.
+- **FastAPI** was used for the ML service because Python has strong support for scikit-learn and model serving.
+- **Docker Compose** was used to run frontend, backend, database, and ML service in a consistent local environment.
+- **JWT authentication** was used to protect wallet routes and keep user sessions secure.
+- **Separate ML service architecture** keeps fraud detection independent from the main Express backend.
 
 ---
 
@@ -100,104 +221,139 @@ fraud_score ≥ 0.70   fraud_score < 0.70
 ### Prerequisites
 
 - Node.js v18+
-- PostgreSQL running locally (or a remote instance)
 - Python 3.9+
-- Docker & Docker Compose
+- PostgreSQL
+- Docker and Docker Compose
+- Git
 
-### Local Setup (without Docker)
+---
+
+### Local Setup Without Docker
 
 ```bash
-# 1. Clone the repo
+# 1. Clone the repository
 git clone https://github.com/Wcoder547/safepay.git
 cd safepay
+```
 
-# 2. Backend
+#### Backend
+
+```bash
 cd backend
-npm install
-cp .env.example .env        # fill in your values
-npx prisma migrate dev      # run DB migrations
-npm run dev
+pnpm install
+cp .env.example .env
+npx prisma migrate dev
+pnpm run dev
+```
 
-# 3. Frontend (new terminal)
-cd ../frontend
-npm install
-npm start
+#### Frontend
 
-# 4. ML API (new terminal)
-cd ../ml-api
+```bash
+cd frontend
+pnpm install
+pnpm run dev
+```
+
+#### ML API
+
+```bash
+cd ml-api
 pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 ```
 
-### Local Setup (with Docker)
+---
+
+### Local Setup With Docker
 
 ```bash
 git clone https://github.com/Wcoder547/safepay.git
 cd safepay
-cp backend/.env.example backend/.env   # fill in your values
+cp backend/.env.example backend/.env
 docker compose up --build
 ```
 
-All three services start together. App runs at `http://localhost:3000`.
+Default local URLs:
+
+```txt
+Frontend: http://localhost:3000
+Backend API: http://localhost:5000
+ML API: http://localhost:8000
+```
 
 ---
 
 ## Environment Variables
 
-Create a `.env` file inside `backend/`:
+Create `backend/.env`:
 
 ```env
 PORT=5000
-DATABASE_URL=postgresql://<user>:<password>@localhost:5432/safepay
+DATABASE_URL=postgresql://USER:PASSWORD@localhost:5432/safepay
 JWT_SECRET=your_jwt_secret_key
 ML_API_URL=http://localhost:8000/predict
+FRONTEND_URL=http://localhost:3000
+NODE_ENV=development
 ```
 
-> **Never commit your `.env` file.** It's already in `.gitignore`.
+Create `frontend/.env` if your frontend uses Vite:
+
+```env
+VITE_API_BASE_URL=http://localhost:5000/api
+```
 
 ---
 
 ## API Reference
 
-### Auth
+### Auth Routes
 
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/api/auth/register` | Register a new user |
-| POST | `/api/auth/login` | Login and receive JWT |
+| Method | Endpoint             | Description           |
+| ------ | -------------------- | --------------------- |
+| POST   | `/api/auth/register` | Register a new user   |
+| POST   | `/api/auth/login`    | Login and receive JWT |
 
-### Wallet
+### Wallet Routes
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/api/wallet/balance` | Get current user balance |
-| POST | `/api/wallet/send` | Send money to another user |
-| GET | `/api/wallet/transactions` | Get transaction history |
+| Method | Endpoint                   | Description                |
+| ------ | -------------------------- | -------------------------- |
+| GET    | `/api/wallet/balance`      | Get current user balance   |
+| POST   | `/api/wallet/send`         | Send money to another user |
+| GET    | `/api/wallet/transactions` | Get transaction history    |
 
-#### Example — Send Money
+### Example — Send Money
 
 **Request**
-```json
+
+```http
 POST /api/wallet/send
 Authorization: Bearer <token>
+Content-Type: application/json
+```
 
+```json
 {
-  "recipientEmail": "user@example.com",
-  "amount": 500
+  "recipientPhone": "03001217136",
+  "amount": 2000,
+  "pin": "1234",
+  "note": "Rent payment"
 }
 ```
 
-**Response (success)**
+**Success Response**
+
 ```json
 {
   "status": "success",
-  "message": "Transaction completed",
+  "message": "Transaction completed successfully",
   "transactionId": "txn_abc123",
-  "newBalance": 4500
+  "amount": 2000,
+  "fraudScore": 0.0
 }
 ```
 
-**Response (fraud blocked)**
+**Fraud Blocked Response**
+
 ```json
 {
   "status": "blocked",
@@ -208,30 +364,37 @@ Authorization: Bearer <token>
 
 ---
 
-## ML Fraud Detection
+## ML Fraud Detection Service
 
-The fraud detection service lives in `ml-api/` and is built on a **custom-trained Random Forest classifier**.
+The ML service is located inside `ml-api/` and exposes a prediction endpoint using FastAPI.
 
-### Model
+### Model Details
 
-- **Algorithm:** Random Forest (scikit-learn)
-- **Dataset:** Custom dataset collected and labelled for this project
-- **Serving:** FastAPI — exposes a `/predict` endpoint
-- **Threshold:** transactions with a `fraud_score >= 0.70` are blocked
+| Item                | Detail                            |
+| ------------------- | --------------------------------- |
+| Algorithm           | Random Forest Classifier          |
+| Library             | scikit-learn                      |
+| Serving Framework   | FastAPI                           |
+| Threshold           | `fraud_score >= 0.70`             |
+| Action on High Risk | Block transaction before DB write |
 
-### Request / Response
+### Prediction Request
+
+```http
+POST http://localhost:8000/predict
+Content-Type: application/json
+```
 
 ```json
-POST http://localhost:8000/predict
-
 {
   "amount": 50000,
   "sender_account_age_days": 12,
   "recipient_account_age_days": 3,
-  "transactions_last_24h": 8,
-  ...
+  "transactions_last_24h": 8
 }
 ```
+
+### Prediction Response
 
 ```json
 {
@@ -240,69 +403,112 @@ POST http://localhost:8000/predict
 }
 ```
 
-The Express backend reads `is_fraud` and either proceeds with the transaction or returns a 400 to the client.
-
 ---
 
 ## Deployment
 
-SafePay is deployed on **AWS** with all services containerized via Docker.
+SafePay can be deployed in two ways:
+
+### Option 1: Dockerized Cloud Deployment
+
+All services can run on a cloud VM using Docker Compose.
 
 ```bash
-# Build and push images (run per service)
-docker build -t safepay-backend ./backend
-docker tag safepay-backend <your-ecr>/safepay-backend:latest
-docker push <your-ecr>/safepay-backend:latest
+docker compose up --build -d
 ```
 
-> Update the registry URL to match your AWS ECR or Docker Hub setup.
+### Option 2: Separate Free-Tier Deployment
 
----
+For portfolio/demo deployment, services can also be deployed separately:
 
-## CI/CD Pipeline
+```txt
+Frontend: Vercel / Netlify
+Backend: Render / Railway / AWS
+ML API: Render / Railway / AWS
+Database: Neon PostgreSQL / Supabase PostgreSQL / AWS RDS
+```
 
-A GitHub Actions pipeline is being set up to automate:
+### Deployment Note
 
-1. Run tests on every push to `main`
-2. Build Docker images for all three services
-3. Push images to the container registry
-4. Deploy to AWS automatically
-
-Pipeline config will live in `.github/workflows/deploy.yml`.
+This project includes Docker/Docker Compose for a production-like local setup. If deployed on free-tier services, the backend or ML API may sleep and take a few seconds to wake up on the first request.
 
 ---
 
 ## Project Structure
 
-```
+```txt
 safepay/
-├── backend/              # Node.js + Express API
+├── backend/                  # Node.js + Express API
 │   ├── prisma/
 │   │   └── schema.prisma
 │   ├── src/
 │   │   ├── controllers/
 │   │   ├── routes/
 │   │   ├── middleware/
+│   │   ├── services/
 │   │   └── index.js
 │   ├── .env.example
 │   └── package.json
-├── frontend/             # React.js client
+│
+├── frontend/                 # React frontend
 │   ├── src/
 │   │   ├── components/
 │   │   ├── pages/
+│   │   ├── hooks/
 │   │   └── App.jsx
 │   └── package.json
-├── ml-api/               # FastAPI + Random Forest model
+│
+├── ml-api/                   # FastAPI + Random Forest model
 │   ├── model/
 │   │   └── fraud_model.pkl
 │   ├── main.py
 │   └── requirements.txt
+│
+├── docs/
+│   └── screenshots/
+│       ├── login.png
+│       ├── dashboard.png
+│       ├── send-recipient.png
+│       ├── send-amount.png
+│       ├── send-confirm.png
+│       ├── transaction-receipt.png
+│       ├── transaction-history.png
+│       ├── wallet-audit-log.png
+│       ├── fraud-blocked-result.png
+│       └── settings-sessions.png
+│
 ├── docker-compose.yml
 └── README.md
 ```
 
 ---
 
+## Future Improvements
+
+- Add role-based admin dashboard for monitoring suspicious transactions.
+- Add two-factor authentication for sensitive wallet actions.
+- Add fraud analytics charts for transaction risk patterns.
+- Add automated backend tests for wallet and fraud-blocking logic.
+- Add Swagger/OpenAPI documentation for backend APIs.
+- Add CI/CD pipeline for Docker image build and deployment.
+- Add production monitoring and error logging.
+
+---
+
+## Author
+
+**Waseem Akram**  
+Full-Stack Developer  
+Portfolio: https://www.waseemmalikdev.eu.cc/  
+GitHub: https://github.com/Wcoder547  
+LinkedIn: https://www.linkedin.com/in/wasim-akram-dev/
+
+---
+
 ## License
 
+<<<<<<< HEAD
 MIT © [Waseem Akram](https://www.linkedin.com/in/wasim-akram-dev/)
+=======
+MIT © Waseem Akram
+>>>>>>> 357e6e1 (update readme file)
