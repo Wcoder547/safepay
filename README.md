@@ -45,6 +45,7 @@ SafePay allows users to send and receive money securely while every transaction 
   - [Future Improvements](#future-improvements)
   - [Author](#author)
   - [License](#license)
+- [MIT © Waseem Akram](#mit--waseem-akram)
 
 ---
 
@@ -67,10 +68,7 @@ SafePay allows users to send and receive money securely while every transaction 
 
 ## Live Demo
 
-<<<<<<< HEAD
-> _http://16.170.146.30/
-=======
-**Demo:** http://16.170.146.30/
+http://16.170.146.30/
 
 ### Demo Credentials
 
@@ -185,7 +183,7 @@ User notified    Transaction saved in PostgreSQL
 6. If `fraud_score >= 0.70`, the transaction is blocked before database write.
 7. If `fraud_score < 0.70`, the transaction is processed and stored using Prisma.
 8. User receives success or fraud-blocked notification.
->>>>>>> 357e6e1 (update readme file)
+   > > > > > > > 357e6e1 (update readme file)
 
 ---
 
@@ -511,4 +509,5 @@ LinkedIn: https://www.linkedin.com/in/wasim-akram-dev/
 MIT © [Waseem Akram](https://www.linkedin.com/in/wasim-akram-dev/)
 =======
 MIT © Waseem Akram
->>>>>>> 357e6e1 (update readme file)
+
+> > > > > > > 357e6e1 (update readme file)
