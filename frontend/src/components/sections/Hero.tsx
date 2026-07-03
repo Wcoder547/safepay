@@ -36,12 +36,12 @@ export function Hero() {
            <button className="group relative h-12 overflow-hidden rounded-full bg-linear-to-r from-blue-600 to-indigo-600 px-7 text-sm font-semibold text-white shadow-lg shadow-blue-600/30 transition-all duration-300 hover:shadow-xl hover:shadow-blue-600/40 hover:scale-[1.03] active:scale-[0.98]">
               {/* shimmer sweep */}
               <span className="absolute inset-0 -translate-x-full skew-x-[-20deg] bg-white/20 transition-transform duration-500 group-hover:translate-x-[150%]" />
-              <span className="relative flex items-center gap-2">
+              <a href="/sign-up" className="relative flex items-center gap-2">
                 Get started — it's free
                 <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20 transition-transform duration-200 group-hover:translate-x-0.5">
                   <ArrowRight className="h-3.5 w-3.5" />
                 </span>
-              </span>
+              </a>
             </button>
 
             {/* ── improved watch demo button ── */}

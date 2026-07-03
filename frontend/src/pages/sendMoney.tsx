@@ -61,7 +61,7 @@ function StepRecipient({
   onNext: () => void;
   onSelectContact: (c: Contact) => void;
 }) {
-  const [search, setSearch] = useState("");
+  const [search] = useState("");
   const filtered = recentContacts.filter(
     (c) =>
       c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -135,17 +135,6 @@ function StepRecipient({
           <p className="text-xs font-semibold text-slate-600">
             Recent contacts
           </p>
-          {recentContacts.length > 0 && (
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-slate-400" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search..."
-                className="h-7 w-32 rounded-lg border border-slate-200 bg-slate-50 pl-7 pr-2 text-xs placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
-              />
-            </div>
-          )}
         </div>
         {recentLoading ? (
           <div className="space-y-2">
@@ -811,8 +800,24 @@ export function SendMoney() {
       .getRecentContacts()
       .then((res: any) => {
         const contacts = res.data?.data ?? [];
+
+        // Normalize current user's phone so we can exclude it from the list
+        const myPhoneRaw =
+          (wallet as any)?.phone ??
+          (wallet as any)?.user?.phone ??
+          (wallet as any)?.owner?.phone ??
+          "";
+        const normalize = (p: string) =>
+          (p ?? "").replace(/\D/g, "").replace(/^92/, "").replace(/^0/, "");
+        const myPhone = normalize(myPhoneRaw);
+
+        const filtered = contacts.filter((u: any) => {
+          const cPhone = normalize(u.phone);
+          return cPhone && cPhone !== myPhone;
+        });
+
         setRecentContacts(
-          contacts.map((u: any, i: number) => ({
+          filtered.map((u: any, i: number) => ({
             name: u.full_name ?? u.name ?? "Unknown",
             phone: u.phone,
             avatar: [
@@ -827,7 +832,7 @@ export function SendMoney() {
       })
       .catch(() => {})
       .finally(() => setRecentLoading(false));
-  }, []);
+  }, [wallet]);
 
   useEffect(() => {
     if (phone.length !== 10) {
@@ -990,19 +995,6 @@ export function SendMoney() {
     <AppLayout
       title={showTitle ? "Send Money" : undefined}
       subtitle={showTitle ? "Fast, secure, AI-protected transfers." : undefined}
-      headerRight={
-        <div className="flex items-center gap-2">
-          <div className="hidden items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 sm:flex">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-            </span>
-            <span className="text-[11px] font-semibold text-emerald-700">
-              AI protection active
-            </span>
-          </div>
-        </div>
-      }
     >
       <div className="p-5 md:p-8">
         <div className="mx-auto max-w-md">

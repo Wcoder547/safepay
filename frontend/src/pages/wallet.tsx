@@ -642,12 +642,7 @@ const logsParams = {
                 Showing {logs.length} of{" "}
                 {(logsData as any)?.pagination?.total ?? logs.length} entries
               </p>
-              <div className="flex items-center gap-1">
-                <Shield className="h-3 w-3 text-emerald-500" />
-                <p className="text-[11px] font-medium text-emerald-600">
-                  Append-only audit trail
-                </p>
-              </div>
+            
             </div>
           </div>
         </main>

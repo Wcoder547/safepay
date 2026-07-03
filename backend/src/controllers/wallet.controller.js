@@ -560,9 +560,13 @@ const lookupUser = AsyncHandler(async (req, res) => {
 
 const getRecentContacts = AsyncHandler(async (req, res) => {
   const recentTxns = await prisma.transaction.findMany({
-    where:   { sender_id: req.user.id, status: "APPROVED" },
+    where: {
+      sender_id: req.user.id,
+      status: "APPROVED",
+      receiver_id: { not: req.user.id },
+    },
     orderBy: { created_at: "desc" },
-    take:    50,
+    take: 50,
     select: {
       receiver: {
         select: { full_name: true, phone: true },
@@ -570,12 +574,12 @@ const getRecentContacts = AsyncHandler(async (req, res) => {
     },
   });
 
-  // Deduplicate by phone, keep most recent first, max 5
-  const seen     = new Set();
+  
+  const seen = new Set();
   const contacts = [];
-
   for (const txn of recentTxns) {
     const phone = txn.receiver.phone;
+    if (phone === req.user.phone) continue;
     if (!seen.has(phone)) {
       seen.add(phone);
       contacts.push({ full_name: txn.receiver.full_name, phone });
@@ -587,5 +591,4 @@ const getRecentContacts = AsyncHandler(async (req, res) => {
     new ApiResponse(200, contacts, "Recent contacts fetched.")
   );
 });
-
 export { getBalance, topUp, sendMoney, getHistory, getWalletLogs, getStats , getRecentContacts, lookupUser};

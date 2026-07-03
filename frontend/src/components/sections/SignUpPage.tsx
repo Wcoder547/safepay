@@ -208,7 +208,7 @@ const getApiErrorMessage = (): string | null => {
                   value={form.full_name}
                   onChange={handleChange}
                   onBlur={() => handleBlur("full_name")}
-                  placeholder="Waseem Akram"
+                  placeholder="Enter your full name"
                   className={inputClass("full_name")}
                 />
                 <User className="absolute right-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors pointer-events-none" />
@@ -258,7 +258,7 @@ const getApiErrorMessage = (): string | null => {
                     }))
                   }
                   onBlur={() => handleBlur("phone")}
-                  placeholder="3431077698"
+                  placeholder="3001234567"
                   className="flex-1 bg-transparent px-4 py-3.5 text-sm text-slate-900 outline-none placeholder:text-slate-400"
                 />
               </div>
@@ -274,7 +274,7 @@ const getApiErrorMessage = (): string | null => {
                   value={cnic}
                   onChange={handleCnicChange}
                   onBlur={() => handleBlur("cnic")}
-                  placeholder="38405-5723074-1"
+                  placeholder="XXXXX-XXXXXXX-X"
                   maxLength={15}
                   className={inputClass("cnic", "font-mono tracking-wider")}
                 />
@@ -376,13 +376,7 @@ const getApiErrorMessage = (): string | null => {
           </p>
         </div>
 
-        {/* Security Badge */}
-        <div className="mt-6 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/50 backdrop-blur-sm border border-white/40 rounded-2xl text-xs text-slate-500 shadow-lg">
-            🔒 Protected with enterprise-grade security
-          </div>
-        </div>
-      </div>
+         </div>
     </div>
   );
 }

@@ -29,7 +29,7 @@ export function SignInPage() {
       return Object.values(apiError.fields)[0] as string;
     }
 
-    // Known error codes → friendly messages
+   
     const codeMessages: Record<string, string> = {
       INVALID_CREDENTIALS: "Incorrect email or password. Please try again.",
       ACCOUNT_FROZEN:      "Your account has been frozen. Contact support.",
@@ -214,12 +214,7 @@ export function SignInPage() {
           </Link>
         </div>
 
-        {/* ── Security Badge ── */}
-        <div className="mt-6 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/50 backdrop-blur-sm border border-white/40 rounded-2xl text-xs text-slate-500 shadow-lg">
-            🔒 Protected with enterprise-grade security
-          </div>
-        </div>
+      
       </div>
     </div>
   );

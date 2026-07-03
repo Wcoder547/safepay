@@ -46,13 +46,22 @@ export const useTopUp = () => {
 
 
 export function useSendMoney() {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (payload: {
       receiver_phone: string;
       amount: number;
       note: string;
       pin: string;
-    }) => authApi.sendMoney(payload),
+    }) => walletApi.sendMoney(payload),
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.wallet });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.transactions });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.walletLogs });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.walletStats });
+    },
   });
 }
 

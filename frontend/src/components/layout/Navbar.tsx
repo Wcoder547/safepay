@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ArrowRight, Send, Wallet, BarChart3, Shield,
-         ChevronDown, Menu, X, Zap, HeadphonesIcon } from "lucide-react";
+         ChevronDown, Menu, X, Zap} from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 
@@ -157,10 +157,7 @@ export function Navbar() {
               </Button>
             </Link>
 
-            <button className="hidden h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-all hover:bg-slate-50 hover:text-slate-700 lg:flex">
-              <HeadphonesIcon className="h-4 w-4" />
-            </button>
-
+          
             <button
               onClick={() => setMobileOpen((p) => !p)}
               className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition-colors hover:bg-slate-50 md:hidden"
