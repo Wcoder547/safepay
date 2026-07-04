@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
+import useAuthStore from "@/store/auth.store";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -26,6 +27,7 @@ import {
   LayoutDashboard,
   AlertCircle,
   Loader2,
+  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -127,6 +129,10 @@ function Skeleton({ className = "" }: { className?: string }) {
 }
 
 export function WalletPage() {
+  const navigate = useNavigate();
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [activeFilter, setActiveFilter] = useState("All");
   const [search, setSearch] = useState("");
@@ -149,14 +155,15 @@ export function WalletPage() {
     refetch: refetchStats,
   } = useWalletStats();
 
-const logsParams = {
-  ...(FILTER_MAP[activeFilter] !== "ALL" ? { type: FILTER_MAP[activeFilter] } : {}),
-  ...(search ? { search } : {}),
-};
+  const logsParams = {
+    ...(FILTER_MAP[activeFilter] !== "ALL"
+      ? { type: FILTER_MAP[activeFilter] }
+      : {}),
+    ...(search ? { search } : {}),
+  };
   const {
     data: logsData,
     isLoading: loadingLogs,
-    isFetching: fetchingLogs,
     refetch: refetchLogs,
   } = useWalletLogs(logsParams);
 
@@ -259,7 +266,6 @@ const logsParams = {
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 font-sans">
-      {/* ── sidebar ── */}
       <aside className="hidden md:flex w-64 flex-col bg-white border-r border-slate-100 shadow-sm">
         <div className="flex h-16 items-center gap-3 border-b border-slate-100 px-5">
           <LogoMark size={34} />
@@ -299,22 +305,36 @@ const logsParams = {
         </nav>
         <div className="border-t border-slate-100 p-4">
           <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-linear-to-br from-blue-500 to-indigo-600 text-xs font-bold text-white">
-              WA
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-blue-500 to-indigo-600 text-xs font-bold text-white">
+              {user?.full_name
+                ?.split(" ")
+                .map((s) => s[0])
+                .join("")
+                .toUpperCase()
+                .slice(0, 2) ?? "?"}
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-slate-800">
-                Waseem Akram
+                {user?.full_name ?? "User"}
               </p>
               <p className="truncate text-[11px] text-slate-500">
-                +92 343 1077698
+                {user?.phone ?? ""}
               </p>
             </div>
+            <button
+              onClick={async () => {
+                await logout();
+                navigate({ to: "/sign-in" });
+              }}
+              className="text-slate-400 hover:text-rose-500 transition-colors"
+              title="Logout"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
           </div>
         </div>
       </aside>
 
-      {/* ── main ── */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* topbar */}
         <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-100 bg-white px-5 shadow-sm">
@@ -341,7 +361,6 @@ const logsParams = {
         </header>
 
         <main className="flex-1 overflow-y-auto p-5 md:p-7">
-          {/* Global error banner */}
           {globalError && (
             <div className="mb-4 flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
               <AlertCircle className="h-4 w-4 shrink-0 text-rose-500" />
@@ -355,7 +374,6 @@ const logsParams = {
             </div>
           )}
 
-          {/* ── balance hero ── */}
           <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-slate-900 via-blue-900 to-indigo-900 p-6 text-white shadow-xl shadow-blue-900/30 mb-5">
             <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/5" />
             <div className="absolute -bottom-6 right-16 h-24 w-24 rounded-full bg-white/5" />
@@ -405,7 +423,6 @@ const logsParams = {
                 </button>
               </div>
 
-              {/* mini stats */}
               <div className="mt-5 grid grid-cols-3 gap-3">
                 {[
                   {
@@ -446,7 +463,6 @@ const logsParams = {
                 ))}
               </div>
 
-              {/* actions */}
               <div className="mt-5 flex gap-2">
                 <Link to="/sendMoney">
                   <Button className="h-9 rounded-xl bg-white text-blue-700 text-xs font-bold shadow hover:bg-blue-50">
@@ -464,7 +480,6 @@ const logsParams = {
             </div>
           </div>
 
-          {/* ── stats row ── */}
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4 mb-5">
             {displayStats.map(
               ({ label, value, icon: Icon, color, bg, border }) => (
@@ -490,7 +505,6 @@ const logsParams = {
             )}
           </div>
 
-          {/* ── wallet logs ── */}
           <div className="rounded-2xl border border-slate-100 bg-white shadow-sm">
             {/* header */}
             <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
@@ -510,7 +524,6 @@ const logsParams = {
               </Link>
             </div>
 
-            {/* search + filter */}
             <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-3 sm:flex-row sm:items-center">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
@@ -642,15 +655,11 @@ const logsParams = {
                 Showing {logs.length} of{" "}
                 {(logsData as any)?.pagination?.total ?? logs.length} entries
               </p>
-            
             </div>
           </div>
         </main>
       </div>
 
-      {/* ════════════════════════════════════════
-          TOP UP MODAL
-      ════════════════════════════════════════ */}
       {showTopUp && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
           <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl">
@@ -672,7 +681,6 @@ const logsParams = {
               </button>
             </div>
 
-            {/* modal body */}
             <div className="p-5">
               {/* current balance */}
               <div className="mb-4 rounded-xl bg-slate-50 p-4 text-center">
@@ -688,7 +696,6 @@ const logsParams = {
                 )}
               </div>
 
-              {/* quick amounts */}
               <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400 mb-2">
                 Quick Amount
               </p>
@@ -710,7 +717,6 @@ const logsParams = {
                 ))}
               </div>
 
-              {/* custom amount */}
               <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400 mb-2">
                 Or enter amount
               </p>
@@ -733,7 +739,6 @@ const logsParams = {
                 />
               </div>
 
-              {/* limit note */}
               <div className="mb-4 flex items-center gap-2 rounded-xl bg-blue-50 px-3 py-2.5">
                 <Shield className="h-4 w-4 shrink-0 text-blue-600" />
                 <p className="text-[11px] text-blue-700 font-medium">
@@ -741,7 +746,6 @@ const logsParams = {
                 </p>
               </div>
 
-              {/* error */}
               {topUpError && (
                 <div className="mb-4 flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2.5">
                   <AlertCircle className="h-4 w-4 shrink-0 text-rose-500" />
@@ -751,7 +755,6 @@ const logsParams = {
                 </div>
               )}
 
-              {/* success */}
               {topUpSuccess && (
                 <div className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5">
                   <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
@@ -761,7 +764,6 @@ const logsParams = {
                 </div>
               )}
 
-              {/* new balance preview */}
               {topUpAmount && Number(topUpAmount) > 0 && !topUpSuccess && (
                 <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-center">
                   <p className="text-[11px] text-emerald-600 mb-0.5">
@@ -774,7 +776,6 @@ const logsParams = {
                 </div>
               )}
 
-              {/* actions */}
               <div className="flex gap-2">
                 <Button
                   variant="outline"

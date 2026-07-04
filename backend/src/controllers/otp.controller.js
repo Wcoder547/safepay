@@ -8,7 +8,7 @@ import { sendEmail } from "../services/email.service.js";
 
 const OTP_EXPIRY_MINUTES = 10;
 const OTP_MAX_ATTEMPTS = 5;
-const OTP_RATE_LIMIT = 3; // max per window
+const OTP_RATE_LIMIT = 3; 
 const OTP_RATE_WINDOW_MINUTES = 10;
 
 

@@ -74,8 +74,6 @@ const changePin = AsyncHandler(async (req, res) => {
   );
 });
 
-// POST /auth/pin/verify  
-// Used internally before send money
 const verifyPin = AsyncHandler(async (req, res) => {
   const { pin } = req.body;
 

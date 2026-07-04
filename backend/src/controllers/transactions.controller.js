@@ -31,7 +31,7 @@ const getTransaction = AsyncHandler(async (req, res) => {
     throw new ApiError(404, "Transaction not found.", { code: "NOT_FOUND" });
   }
 
-  // Security — only sender or receiver can view
+  
   const isInvolved =
     transaction.sender_id === req.user.id ||
     transaction.receiver_id === req.user.id;
@@ -42,7 +42,7 @@ const getTransaction = AsyncHandler(async (req, res) => {
     });
   }
 
-  // Add direction from current user's perspective
+  
   const direction =
     transaction.sender_id === req.user.id ? "SENT" : "RECEIVED";
 
@@ -73,7 +73,7 @@ const getReceipt = AsyncHandler(async (req, res) => {
     throw new ApiError(404, "Transaction not found.", { code: "NOT_FOUND" });
   }
 
-  // Only sender or receiver
+ 
   const isInvolved =
     transaction.sender_id === req.user.id ||
     transaction.receiver_id === req.user.id;
@@ -82,7 +82,7 @@ const getReceipt = AsyncHandler(async (req, res) => {
     throw new ApiError(403, "Forbidden.", { code: "FORBIDDEN" });
   }
 
-  // Only approved transactions have receipts
+  
   if (transaction.status !== "APPROVED") {
     throw new ApiError(400, "Receipt only available for approved transactions.", {
       code: "RECEIPT_UNAVAILABLE",

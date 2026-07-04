@@ -11,8 +11,6 @@ import fraudRouter from "./routes/fraud.routes.js";
 import adminRouter from "./routes/admin.routes.js";
 
 
-
-
 const app = express();
 
 app.use(
@@ -34,23 +32,11 @@ app.get("/", (req, res) => {
 
 
 app.use("/api/v1/health", healthRouter);
-
-
-
 app.use("/api/v1/auth", authRouter);
-
 app.use("/api/v1/wallet", walletRouter);
-
-
 app.use("/api/v1/transactions", transactionRouter);
-
-
 app.use("/api/v1/notifications", notificationRouter);
-
-
 app.use("/api/v1/fraud", fraudRouter);
-
-
 app.use("/api/v1/admin", adminRouter);
 
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -38,7 +38,6 @@ interface RawTransaction {
   receiver: { id: string; full_name: string; phone: string };
 }
 
-/* Normalized shape we use in the UI */
 interface Transaction {
   id: string;
   name: string;
@@ -57,9 +56,7 @@ interface RecentContact {
   avatar?: string;
 }
 
-/* ══════════════════════════════════════
-   CONSTANTS
-══════════════════════════════════════ */
+
 const NAV = [
   { icon: LayoutDashboard, label: "Dashboard", to: "/dashboard" },
   { icon: Send, label: "Send Money", to: "/sendMoney" },
@@ -78,9 +75,7 @@ const AVATAR_GRADIENTS = [
   "from-violet-500 to-purple-600",
 ];
 
-/* ══════════════════════════════════════
-   HELPERS
-══════════════════════════════════════ */
+
 function getInitials(name?: string): string {
   if (!name) return "?";
   return name
@@ -111,7 +106,7 @@ function avatarGradient(name: string): string {
   return AVATAR_GRADIENTS[hash % AVATAR_GRADIENTS.length];
 }
 
-/* Same logic as HistoryPage normalize() */
+
 function normalizeTransaction(
   raw: RawTransaction,
   currentUserId: string | null,
@@ -132,9 +127,7 @@ function normalizeTransaction(
   };
 }
 
-/* ══════════════════════════════════════
-   LOGO
-══════════════════════════════════════ */
+
 function LogoMark({ size = 32 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
@@ -210,10 +203,9 @@ function LogoMark({ size = 32 }: { size?: number }) {
   );
 }
 
-/* ══════════════════════════════════════
-   DASHBOARD
-══════════════════════════════════════ */
+
 export function Dashboard() {
+  const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
 
@@ -305,7 +297,7 @@ export function Dashboard() {
       .finally(() => setContactsLoading(false));
   };
 
-  /* ── Fetch notifications count ── */
+  
   const fetchNotifications = () => {
     notificationsApi
       .getAll({})
@@ -315,7 +307,7 @@ export function Dashboard() {
       .catch(() => {});
   };
 
-  /* ── Initial load ── */
+  
   useEffect(() => {
     fetchTransactions();
     fetchStats();
@@ -430,7 +422,10 @@ export function Dashboard() {
               <p className="truncate text-[11px] text-slate-500">{phone}</p>
             </div>
             <button
-              onClick={() => logout()}
+              onClick={async () => {
+                await logout();
+                navigate({ to: "/sign-in" });
+              }}
               className="text-slate-400 hover:text-rose-500 transition-colors"
               title="Logout"
             >
@@ -705,7 +700,7 @@ export function Dashboard() {
                 </div>
               ) : (
                 <ul className="space-y-1">
-                  {filtered.map((tx, i) => {
+                  {filtered.map((tx) => {
                     const isCredit = tx.type === "CREDIT";
                     const isBlocked = tx.status === "BLOCKED";
                     const timeStr = formatTime(tx.created_at);

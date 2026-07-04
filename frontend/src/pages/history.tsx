@@ -1,7 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Link } from "@tanstack/react-router";
 import {
-  ArrowLeft,
   ArrowDownLeft,
   ArrowUpRight,
   ChevronLeft,
@@ -325,7 +323,7 @@ function TxnDrawer({
             Close
           </Button>
           {!isBlocked && (
-            <Button className="flex-1 h-10 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-bold shadow-md shadow-blue-600/20">
+            <Button className="flex-1 h-10 rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 text-white text-sm font-bold shadow-md shadow-blue-600/20">
               <Download className="mr-1.5 h-4 w-4" /> Receipt
             </Button>
           )}
@@ -531,9 +529,7 @@ export function HistoryPage() {
     </div>
   );
 
-  /* ─────────────────────────────
-     RENDER
-  ───────────────────────────── */
+
   return (
     <AppLayout
       title="Transaction History"
@@ -542,14 +538,6 @@ export function HistoryPage() {
     >
       <div className="p-5 md:p-8">
         <div className="mx-auto max-w-5xl">
-          {/* Back to dashboard */}
-          <Link
-            to="/dashboard"
-            className="mb-5 flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors w-fit"
-          >
-            <ArrowLeft className="h-4 w-4" /> Back to Dashboard
-          </Link>
-
           {/* ── Summary stats ── */}
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4 mb-6">
             {[

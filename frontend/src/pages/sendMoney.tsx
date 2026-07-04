@@ -998,15 +998,7 @@ export function SendMoney() {
     >
       <div className="p-5 md:p-8">
         <div className="mx-auto max-w-md">
-          {showTitle && (
-            <Link
-              to="/dashboard"
-              className="mb-5 flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors w-fit"
-            >
-              <ArrowLeft className="h-4 w-4" /> Back to Dashboard
-            </Link>
-          )}
-
+          
           {showTitle && (
             <div className="mb-6">
               <div className="flex items-center gap-2">
