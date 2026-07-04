@@ -1,6 +1,3 @@
-# train_model.py
-# Train Random Forest on SafePay synthetic data
-
 import pandas as pd
 import numpy as np
 import joblib

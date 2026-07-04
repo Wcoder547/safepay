@@ -22,7 +22,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── Load model + scaler on startup ────────
+
 model = None
 scaler = None
 feature_names = None
@@ -40,7 +40,7 @@ async def load_model():
         print(f"❌ Model load failed: {e}")
         raise RuntimeError(e)
 
-# ── Schemas ───────────────────────────────
+
 class FraudFeatures(BaseModel):
     amount: float = Field(..., gt=0)
     hour_of_day: int = Field(..., ge=0, le=23)
@@ -57,7 +57,7 @@ class PredictResponse(BaseModel):
     model_version: str
     processing_time_ms: float
 
-# ── Feature builder ───────────────────────
+
 def build_features(f: FraudFeatures) -> np.ndarray:
     # Scale amount using saved scaler
     scaled_amount = scaler.transform([[f.amount]])[0][0]
@@ -90,7 +90,7 @@ def get_reasons(f: FraudFeatures, score: float) -> List[str]:
         reasons.append("Multiple high-risk signals detected")
     return reasons or ["Automated pattern detection"]
 
-# ── Routes ────────────────────────────────
+
 @app.get("/health")
 async def health():
     return {
