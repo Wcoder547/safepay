@@ -1,27 +1,5 @@
 name: safepay
-
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: safepay-db
-    environment:
-      POSTGRES_DB: safepay
-      POSTGRES_USER: safepay_user
-      POSTGRES_PASSWORD: safepay_pass
-    ports:
-      - "5433:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U safepay_user -d safepay"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-    networks:
-      - safepay-net
-    restart: unless-stopped
-
   ml-api:
     build:
       context: ./ml-api
@@ -30,12 +8,12 @@ services:
     env_file:
       - ./ml-api/.env
     ports:
-      - "5001:5001"
+      - "5000:5000"
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          'python -c "import urllib.request; urllib.request.urlopen(''http://localhost:5001/health'')"',
+          'python -c "import urllib.request; urllib.request.urlopen(''http://localhost:5000/health'')"',
         ]
       interval: 30s
       timeout: 10s
@@ -51,17 +29,13 @@ services:
       dockerfile: Dockerfile
     container_name: safepay-backend
     env_file:
-      - ./backend/.env
+      - ./backend/.env.production
     environment:
-      DATABASE_URL: postgresql://safepay_user:safepay_pass@postgres:5432/safepay
-
-      ML_API_URL: http://ml-api:5001
+      ML_API_URL: http://ml-api:5000
       NODE_ENV: production
     ports:
       - "8000:8000"
     depends_on:
-      postgres:
-        condition: service_healthy
       ml-api:
         condition: service_healthy
     healthcheck:
@@ -93,7 +67,3 @@ services:
 networks:
   safepay-net:
     driver: bridge
-
-volumes:
-  postgres_data:
-    driver: local

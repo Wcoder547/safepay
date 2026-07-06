@@ -134,3 +134,5 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 /src/generated/prisma
+
+.env

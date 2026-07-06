@@ -1,7 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { config as loadEnv } from 'dotenv'
-import { defineConfig, env } from 'prisma/config'
+import { defineConfig } from 'prisma/config'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -13,9 +13,6 @@ export default defineConfig({
   schema: path.join(__dirname, 'src', 'prisma', 'schema.prisma'),
   migrations: {
     path: path.join(__dirname, 'src', 'prisma', 'migrations'),
-  },
-  datasource: {
-    url: env('DIRECT_URL'),
   },
   migrate: {
     async adapter() {
