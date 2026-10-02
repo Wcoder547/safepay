@@ -86,7 +86,7 @@ const getUserDetail = AsyncHandler(async (req, res) => {
       wallet: {
         select: { balance: true, currency: true },
       },
-      sent_transactions: {
+      sent: {
         take: 5,
         orderBy: { created_at: "desc" },
         select: {
@@ -99,8 +99,8 @@ const getUserDetail = AsyncHandler(async (req, res) => {
       },
       _count: {
         select: {
-          sent_transactions: true,
-          received_transactions: true,
+          sent: true,
+          received: true,
         },
       },
     },

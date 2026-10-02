@@ -92,35 +92,108 @@ const overrideFraud = AsyncHandler(async (req, res) => {
     });
   }
 
-  // Mark report as false alarm + approve the transaction
-  await prisma.$transaction([
-    prisma.fraudReport.update({
+  if (report.transaction.status !== "BLOCKED") {
+    throw new ApiError(400, "Only blocked transactions can be overridden.", {
+      code: "INVALID_STATUS",
+    });
+  }
+
+  const amount = parseFloat(report.transaction.amount);
+  const senderId = report.transaction.sender_id;
+  const receiverId = report.transaction.receiver_id;
+
+  await prisma.$transaction(async (tx) => {
+    const debit = await tx.wallet.updateMany({
+      where: {
+        user_id: senderId,
+        balance: { gte: amount },
+      },
+      data: { balance: { decrement: amount } },
+    });
+
+    if (debit.count === 0) {
+      throw new ApiError(
+        400,
+        "Cannot approve: sender has insufficient balance to settle this transfer.",
+        { code: "INSUFFICIENT_BALANCE" },
+      );
+    }
+
+    const updatedSender = await tx.wallet.findUnique({
+      where: { user_id: senderId },
+    });
+    const receiverBefore = await tx.wallet.findUnique({
+      where: { user_id: receiverId },
+    });
+    const updatedReceiver = await tx.wallet.update({
+      where: { user_id: receiverId },
+      data: { balance: { increment: amount } },
+    });
+
+    await tx.fraudReport.update({
       where: { id },
       data: {
         review_status: "FALSE_ALARM",
-        admin_note:    admin_note || null,
-        reviewed_by:   req.user.id,
-        reviewed_at:   new Date(),
+        admin_note: admin_note || null,
+        reviewed_by: req.user.id,
+        reviewed_at: new Date(),
       },
-    }),
-    prisma.transaction.update({
+    });
+
+    await tx.transaction.update({
       where: { id: report.transaction_id },
-      data:  { status: "APPROVED" },
-    }),
-    // Notify sender — money released
-    prisma.notification.create({
+      data: { status: "APPROVED", is_fraud: false },
+    });
+
+    await tx.walletLog.create({
       data: {
-        user_id:        report.transaction.sender_id,
+        user_id: senderId,
         transaction_id: report.transaction_id,
-        title:          "Transaction Approved ✅",
-        message:        `Your blocked transaction of Rs. ${report.transaction.amount} has been reviewed and approved.`,
-        type:           "SUCCESS",
+        type: "DEBIT",
+        amount,
+        balance_before: parseFloat(updatedSender.balance) + amount,
+        balance_after: updatedSender.balance,
       },
-    }),
-  ]);
+    });
+
+    await tx.walletLog.create({
+      data: {
+        user_id: receiverId,
+        transaction_id: report.transaction_id,
+        type: "CREDIT",
+        amount,
+        balance_before: receiverBefore.balance,
+        balance_after: updatedReceiver.balance,
+      },
+    });
+
+    await tx.notification.create({
+      data: {
+        user_id: senderId,
+        transaction_id: report.transaction_id,
+        title: "Transaction Approved ✅",
+        message: `Your blocked transaction of Rs. ${amount} has been reviewed and approved.`,
+        type: "SUCCESS",
+      },
+    });
+
+    await tx.notification.create({
+      data: {
+        user_id: receiverId,
+        transaction_id: report.transaction_id,
+        title: "Money Received 💰",
+        message: `Rs. ${amount} received after admin review of a blocked transfer.`,
+        type: "SUCCESS",
+      },
+    });
+  });
 
   return res.status(200).json(
-    new ApiResponse(200, null, "Transaction approved. Fraud report marked as false alarm.")
+    new ApiResponse(
+      200,
+      null,
+      "Transaction settled and approved. Fraud report marked as false alarm.",
+    ),
   );
 });
 

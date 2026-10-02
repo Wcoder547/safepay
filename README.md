@@ -182,7 +182,6 @@ User notified    Transaction saved in PostgreSQL
 6. If `fraud_score >= 0.70`, the transaction is blocked before database write.
 7. If `fraud_score < 0.70`, the transaction is processed and stored using Prisma.
 8. User receives success or fraud-blocked notification.
-   > > > > > > > 357e6e1 (update readme file)
 
 ---
 
@@ -419,11 +418,21 @@ docker compose up --build -d
 For portfolio/demo deployment, services can also be deployed separately:
 
 ```txt
-Frontend: Vercel / Netlify
-Backend: Render / Railway / AWS
-ML API: Render / Railway / AWS
-Database: Neon PostgreSQL / Supabase PostgreSQL / AWS RDS
+Frontend: Vercel / Netlify   (see frontend/vercel.json)
+Backend:  Render Blueprint   (see render.yaml)
+ML API:   Render             (included in render.yaml)
+Database: Neon PostgreSQL / Supabase
+Env map:  deploy.env.example
 ```
+
+**Quick path**
+
+1. Create a Neon DB and copy `DATABASE_URL` + `DIRECT_URL`.
+2. In Render: New → Blueprint → select this repo (`render.yaml`).
+3. Set `CORS_ORIGIN` to your Vercel URL and Twilio/Resend keys.
+4. Deploy frontend on Vercel with `VITE_API_URL=https://<backend>.onrender.com/api/v1`.
+5. Run migrations once: `cd backend && pnpm migrate:deploy`.
+6. For free-tier ML cold starts keep `DEMO_ALLOW_ML_FALLBACK=true` and `ALLOW_MOCK_TOPUP=true`.
 
 ### Deployment Note
 

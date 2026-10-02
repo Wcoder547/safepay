@@ -115,6 +115,7 @@ model Transaction {
   hour_of_day        Int?      @db.SmallInt
   sender_txn_count   Int?
   receiver_txn_count Int?
+  idempotency_key    String?   @db.VarChar(64)
   created_at         DateTime  @default(now())
   updated_at         DateTime  @updatedAt
 
@@ -125,6 +126,7 @@ model Transaction {
   fraud_report  FraudReport?
   notifications Notification[]
 
+  @@unique([sender_id, idempotency_key])
   @@map("transactions")
 }
 
