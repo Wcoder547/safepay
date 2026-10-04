@@ -14,6 +14,10 @@ export default defineConfig({
   migrations: {
     path: path.join(__dirname, 'src', 'prisma', 'migrations'),
   },
+  datasource: {
+    url: process.env.DATABASE_URL,
+    directUrl: process.env.DIRECT_URL,
+  },
   migrate: {
     async adapter() {
       const { PrismaPg } = await import('@prisma/adapter-pg')
