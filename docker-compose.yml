@@ -1,5 +1,22 @@
 name: safepay
 services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: safepay-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - safepay-net
+    depends_on:
+      - frontend
+      - backend
+
   ml-api:
     build:
       context: ./ml-api
@@ -7,8 +24,6 @@ services:
     container_name: safepay-ml
     env_file:
       - ./ml-api/.env
-    ports:
-      - "5000:5000"
     healthcheck:
       test:
         [
@@ -33,8 +48,6 @@ services:
     environment:
       ML_API_URL: http://ml-api:5000
       NODE_ENV: production
-    ports:
-      - "8000:8000"
     depends_on:
       ml-api:
         condition: service_healthy
@@ -59,8 +72,6 @@ services:
       args:
         VITE_API_URL: /api/v1
     container_name: safepay-frontend
-    ports:
-      - "80:80"
     depends_on:
       backend:
         condition: service_started
@@ -71,3 +82,7 @@ services:
 networks:
   safepay-net:
     driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:
