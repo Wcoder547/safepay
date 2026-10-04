@@ -65,7 +65,17 @@ jobs:
             
             # Example for ML-API .env
             cat <<EOF > ml-api/.env
-            # Add ML API secrets here if needed
+            PORT=5000
+            MODEL_PATH=model/safepay_fraud_model.pkl
+            SCALER_PATH=model/safepay_scaler.pkl
+            FEATURES_PATH=model/safepay_features.pkl
+            ML_MODEL_VERSION=v1.0.0
+            NODE_ENV=production
+            EOF
+
+            cat <<EOF > frontend/.env
+            VITE_API_URL=https://api.safepay.vynuro.tech/api/v1
+            VITE_API_BASE_URL=https://api.safepay.vynuro.tech/api
             EOF
 
             # Build and restart Docker containers
