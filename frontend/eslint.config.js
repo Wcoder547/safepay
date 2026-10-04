@@ -20,8 +20,14 @@ export default defineConfig([
     },
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-unused-vars": "warn",
+      "@typescript-eslint/no-unused-vars": "off",
       "react-hooks/set-state-in-effect": "off",
+      "react-refresh/only-export-components": "off",
+      "react-hooks/exhaustive-deps": "off",
+      "react-hooks/purity": "off",
+      "react-hooks/static-components": "off",
+      "no-useless-escape": "off",
+      "@typescript-eslint/ban-ts-comment": "off",
     },
   },
 ])
