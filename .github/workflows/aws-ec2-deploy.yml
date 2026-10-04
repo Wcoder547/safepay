@@ -1,0 +1,66 @@
+name: Deploy to AWS EC2
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch: # Allows manual trigger from the GitHub Actions UI
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # Set the target directory for the project
+            PROJECT_DIR="~/safepay"
+
+            # Check if the project directory exists, if not, clone the repository
+            if [ ! -d "$PROJECT_DIR" ]; then
+              echo "Cloning repository..."
+              git clone https://github.com/${{ github.repository }}.git $PROJECT_DIR
+            fi
+
+            cd $PROJECT_DIR
+
+            # Pull the latest changes
+            echo "Pulling latest code..."
+            git fetch --all
+            git reset --hard origin/${{ github.ref_name }}
+            git pull origin ${{ github.ref_name }}
+
+            # Setup environment variables
+            # You can inject secrets from GitHub Actions into the .env files here
+            echo "Setting up environment variables..."
+            
+            # Example for Backend .env
+            cat <<EOF > backend/.env.production
+            PORT=8000
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            ML_API_URL=http://ml-api:5000
+            FRONTEND_URL=${{ secrets.FRONTEND_URL }}
+            NODE_ENV=production
+            EOF
+            
+            # Example for ML-API .env
+            cat <<EOF > ml-api/.env
+            # Add ML API secrets here if needed
+            EOF
+
+            # Build and restart Docker containers
+            echo "Deploying with Docker Compose..."
+            docker compose down
+            docker compose up --build -d
+
+            echo "Deployment successful! 🚀"
