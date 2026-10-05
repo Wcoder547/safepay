@@ -11,9 +11,21 @@ SafePay is containerized using Docker and deployed on a single AWS EC2 `t2.micro
 - **ML API (Python/FastAPI)**: Runs in a Python container, handles fraud detection.
 - **Reverse Proxy (Caddy)**: Handles all incoming HTTP/HTTPS traffic on ports 80/443, automatically provisions Let's Encrypt SSL certificates, and routes requests to the appropriate internal Docker containers.
 
-### Domains
-- **Frontend URL**: `https://safepay.vynuro.tech`
-- **Backend API URL**: `https://api.safepay.vynuro.tech`
+### 🔗 Live URLs & Server Details
+- **Frontend App**: [https://safepay.vynuro.tech](https://safepay.vynuro.tech)
+- **Backend API Base**: [https://api.safepay.vynuro.tech](https://api.safepay.vynuro.tech)
+- **Backend Health Check**: [https://api.safepay.vynuro.tech/api/v1/health](https://api.safepay.vynuro.tech/api/v1/health)
+
+### 🖥️ AWS EC2 Information
+- **Public IP Address**: `3.24.101.7`
+- **Instance Type**: `t2.micro` (1GB RAM) with 2GB Swap Memory (configured to prevent OOM errors during build)
+- **Operating System**: Ubuntu 26.04 LTS
+- **SSH Username**: `ubuntu`
+- **SSH Command**:
+  ```bash
+  ssh -i "SafePay-Server.pem" ubuntu@3.24.101.7
+  ```
+- **Project Location on Server**: `~/safepay`
 
 ---
 
